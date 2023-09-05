@@ -1,0 +1,164 @@
+// Number of subjects within a zone - State
+
+// This code marks the time when at least k subjects are found within the same zone. 
+
+// Edit the subject names as they are defined in the Experiment Settings in your experiment
+// Delete the names of subjects not used e.g. Subjects 4 to 5
+// Add more subject names if necessary e.g. "Subject 6"
+
+const g_aSubjects = ["Subject 1", "Subject 2", "Subject 3", "Subject 4", "Subject 5"];
+
+// Edit the names of the zones
+// You can analyze up to 4 zones
+// If you use more than one zone, set the Number of Outputs in the JavaScript window in the Analysis profile to 2, 3, 4 depending on how many zones you use.
+
+const g_Zone1 = "Zone 1";
+const g_Zone2 = "Zone 2";
+const g_Zone3 = "Zone 3";
+const g_Zone4 = "Zone 4";
+
+// Enter here the threshold k - The state variable returns "true" when more than k subjects are within a zone
+
+var g_dThreshold = 4;
+
+function InZ1(pt1)
+{
+  var z1 = 0;
+  
+  if (pt1 !== null)
+  {
+     if (IsInZone(g_Zone1, pt1))
+     {
+        z1 = 1;
+     }
+   }
+  
+   return z1;
+}
+
+
+function InZ2(pt1)
+{
+  var z2 = 0;
+  
+  if (pt1 !== null)
+  {
+     if (IsInZone(g_Zone2, pt1))
+     {
+        z2 = 1;
+     }
+   }
+  
+   return z2;
+}
+
+function InZ3(pt1)
+{
+  var z3 = 0;
+  
+  if (pt1 !== null)
+  {
+     if (IsInZone(g_Zone3, pt1))
+     {
+        z3 = 1;
+     }
+   }
+  
+   return z3;
+}
+
+function InZ4(pt1)
+{
+  var z4 = 0;
+  
+  if (pt1 !== null)
+  {
+     if (IsInZone(g_Zone4, pt1))
+     {
+        z4 = 1;
+     }
+   }
+  
+   return z4;
+}
+
+
+
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+    var bOutput1 = false;
+    var bOutput2 = false;
+    var bOutput3 = false;
+    var bOutput4 = false;
+
+    var n1 = 0;
+    var n2 = 0;
+    var n3 = 0;
+    var n4 = 0;
+
+    var i;
+ 
+    for (i = 0; i < g_aSubjects.length; ++i) 
+    {
+       var pt = GetSubjectCenter(g_aSubjects[i]);
+ 
+       if (InZ1(pt))
+       {
+         ++n1;
+       }
+
+       if (InZ2(pt))
+       {
+         ++n2;
+       }
+
+       if (InZ3(pt))
+       {
+         ++n3;
+       }
+
+       if (InZ4(pt))
+       {
+         ++n4;
+       }
+
+
+    } 
+        
+    if (n1 > g_dThreshold)
+    {
+       bOutput1 = true;
+    }
+
+    if (n2 > g_dThreshold)
+    {
+       bOutput2 = true;
+    }
+
+    if (n3 > g_dThreshold)
+    {
+       bOutput3 = true;
+    }
+
+    if (n4 > g_dThreshold)
+    {
+       bOutput4 = true;
+    }
+
+
+    SetOutput(0, bOutput1);  //write sample value
+    SetOutput(1, bOutput2);  //write sample value
+    SetOutput(2, bOutput3);  //write sample value
+    SetOutput(3, bOutput4);  //write sample value
+    
+
+}

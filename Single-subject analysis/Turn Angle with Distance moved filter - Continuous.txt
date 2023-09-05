@@ -1,0 +1,76 @@
+// Turn angle with distance moved filter - Continuous
+
+// This code calculates the Tiurn angle just s EthoVision XT would do, however it ignores turn angles when the body points moves little
+
+// Enter the distance filter in mm
+// If a point moves less than this distance from the previous point, then the turn angle is not calculated
+
+const g_Distance = 1;
+var g_aPoints = [];
+
+// This function converts angles from radians to degrees
+
+function toDegrees(angle) 
+{
+  return angle * (180 / Math.PI);
+}
+
+// This function calculates the distance between two points
+
+function Dm(ptPrev, pt)
+{
+    var x = pt.x - ptPrev.x;
+    var y = pt.y - ptPrev.y;
+
+    return Math.sqrt(x * x + y * y);
+}
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+    var pt  = GetCenter();
+    
+    if (pt != null)
+    {
+        if (g_aPoints.length == 0)
+        {
+          g_aPoints.push(pt);
+        }
+        else
+        {
+          var ptPrev = g_aPoints[g_aPoints.length - 1];
+
+          if (Dm(ptPrev, pt) > g_Distance)
+          {
+            g_aPoints.push(pt);
+          }
+        }        
+    }
+    
+    var ta;
+
+    if (g_aPoints.length == 3)
+    {
+        ta = TurnAngle(g_aPoints[0], g_aPoints[1], g_aPoints[2]);
+
+        ta = toDegrees(ta);   
+
+        g_aPoints.shift();
+    }
+
+    if (ta != null)
+    {
+        SetOutput(ta);
+    }
+    else
+    {
+        SetOutputMissing();
+    }
+}

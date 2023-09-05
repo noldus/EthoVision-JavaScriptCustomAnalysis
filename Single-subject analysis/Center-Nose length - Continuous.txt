@@ -1,0 +1,43 @@
+//Center-nose length - Continuous
+
+//This code returns the distance between the nose point and the center point
+
+// This function calculates the distance between points
+
+function Distance(pt1, pt2)
+{
+    var dx = pt1.x - pt2.x;
+    var dy = pt1.y - pt2.y;
+
+   return Math.sqrt(dx * dx + dy * dy);
+}
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+   var length;
+
+   var ptNose = GetNose();
+   var ptCog  = GetCenter();
+     
+   if (ptNose != null && ptCog != null)
+   {
+      length  = Distance(ptNose, ptCog);
+    }
+
+   if (length != null)
+   {  
+      SetOutput(length);
+   }
+   else
+   {
+	SetOutputMissing();   
+   }
+}

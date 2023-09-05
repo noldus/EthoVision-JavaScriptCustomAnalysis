@@ -1,0 +1,57 @@
+// Number of subjects in a zone - Continuous
+
+// This code counts the number of subjects present in a zone, at each sample time
+
+// Edit the subject names as they are defined in the Experiment Settings in your experiment
+// Delete the names of subjects not used e.g. Subjects 5 to 7
+// Add more subject names if necessary e.g. "Subject 8"
+
+const g_aSubjects = ["Subject 1", "Subject 2", "Subject 3", "Subject 4", "Subject 5", "Subject 6", "Subject 7"];
+
+// Edit the name of the zone
+const g_Zone = "Zone 1";
+ 
+// This function checks that a point is in the zone
+ 
+function InZ(pt1)
+{
+  var z = 0;
+  
+  if (pt1 !== null)
+  {
+     if (IsInZone(g_Zone, pt1))
+     {
+        z = 1;
+     }
+   }
+  
+   return z;
+}
+ 
+function Start()
+{
+}
+ 
+function Stop()
+{
+}
+ 
+function Process()
+{
+   var n = 0;
+ 
+   var i;
+ 
+   for (i = 0; i < g_aSubjects.length; ++i) //In this iteration each subject is considered and the zone function is called
+   {
+      var pt = GetSubjectCenter(g_aSubjects[i]);
+ 
+      if (InZ(pt))
+      {
+         ++n;
+      }
+   } 
+ 
+   SetOutput(n);
+}
+

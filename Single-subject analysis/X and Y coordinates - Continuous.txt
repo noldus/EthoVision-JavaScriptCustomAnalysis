@@ -1,0 +1,36 @@
+// X and Y coordinates - Continuous
+
+// This code variable returns the original coordinates X,Y of each focal subject
+// Coordinates are the raw position data after track smoothing
+// For the coordinates if the nose-point and the tail-base point, replace GetCenter with GetNose and GetTail respectively
+// Do not forget to specify 2 as the Number of outputs in the JavaScript Settings window in the Analysis profile
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+
+   var ptC = GetCenter(); 
+ 
+   if (ptC != null)
+   {
+      var x = ptC.x;
+      var y = ptC.y;
+
+      SetOutput(0, x);
+      SetOutput(1, y);
+   }
+
+   else
+   {
+      SetOutputMissing(0);
+      SetOutputMissing(1);
+   }
+}
+

@@ -1,0 +1,80 @@
+// Percentage of zones being visited reached - Event
+
+// This code scores a point event when a certain fraction of the zones has been visited
+
+// Enter here the proportion of zones visited between 0 and 1
+
+const g_dThreshold = 0.8;
+
+// Edit te names of the zones as they are defined in the Arena Settings
+
+const g_aZones     = ['Zone 1', 'Zone 2', 'Zone 3', 'Zone 4', 'Zone 5', 'Zone 6', 'Zone 7', 'Zone 8'];
+
+// Initialize the zone array - add 'false' for each additional zone
+
+var   g_aVisited   = [false, false, false, false, false, false, false, false]; 
+var   g_bDone      = false;
+
+
+function ProcessVisit() 
+{
+    var bEvent = false;
+
+    if (!g_bDone)
+    {
+        // check that the subject is in one of the zones
+        for (var n = 0; n != g_aVisited.length; n++)
+        {
+            if (!g_aVisited[n])
+            {
+                var pt = GetCenter();
+
+                if (pt && IsInZone(g_aZones[n], pt))
+                {
+                    g_aVisited[n] = true;
+                }
+            }
+        }
+
+        // calculate the current number of zones visited
+        var nVisit = 0;
+
+        for (var n2 = 0; n2 != g_aVisited.length; n2++)
+        {
+            if (g_aVisited[n2])
+            {
+                ++nVisit;
+            }
+        }
+        
+        // check whether the proportion of visited zones has reached the threshold
+        if (nVisit / g_aVisited.length >= g_dThreshold)
+        {
+            bEvent  = true;
+            g_bDone = true;
+        }
+    }
+
+    return bEvent;
+}
+
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+    if (ProcessVisit())
+    {
+        SetOutput(1);
+    }
+    else
+    {
+        SetOutputMissing();
+    }
+}

@@ -1,0 +1,38 @@
+// X and Y coordinates rescaled - Continuous
+
+// This code returns the x and y coordinates relative to a reference point g_Poi
+// Use this code for example to re-calculate the position of subjects relative to a common object
+// For EthoVision XT 17.5 and later
+
+// In the Arena Settings define a point with the same name in all the arenas 
+// Edit the name for g_Poi here below
+// To analyze the nose point, replace GetCenter with GetNose
+// Remember to set 2 as the Number of outputs in the JavaScript window in the Analysis profile
+
+const g_Poi = "Point 1";
+var g_ptPoi;
+
+function Start()
+{
+   g_ptPoi = GetPointPoi(g_Poi);
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+   var pt = GetCenter();
+
+   if (pt != undefined && g_ptPoi != undefined)
+   {
+      SetOutput(0, pt.x - g_ptPoi.x);
+      SetOutput(1, pt.y - g_ptPoi.y);
+   }
+   else
+   {
+      SetOutputMissing(0);
+      SetOutputMissing(1);
+   }
+}

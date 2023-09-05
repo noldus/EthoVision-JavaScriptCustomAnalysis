@@ -1,0 +1,85 @@
+// Nearest Neighbour Distance (NND) - Continuous
+
+// Calculates the nearest neighbour distance for each subject and at each sample
+// Assumptions: At least two subjects, distance is based on the center points
+// IID is calculated for each focal subject
+// Unit is mm
+
+// Edit the names of the subjects as they are defined in the Experiment Settings in your experiment
+// Delete the names of subjects not used e.g. Subjects 5 to 7
+// Add more subject names if necessary e.g. "Subject 8"
+
+const g_aSubjects = ["Subject 1", "Subject 2", "Subject 3", "Subject 4", "Subject 5", "Subject 6", "Subject 7","Subject 8", "Subject 9", "Subject 10", "Subject 11", "Subject 12", "Subject 13", "Subject 14", "Subject 15", "Subject 16"];
+
+// Function to calculate distance between two points
+function Distance(pt1, pt2)
+{
+    var dx = pt1.x - pt2.x;
+    var dy = pt1.y - pt2.y;
+
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+    var ptFocal = GetCenter();
+    var min_dist;
+
+    if (ptFocal != null)
+    {
+        var x1 = ptFocal.x;
+        var y1 = ptFocal.y;
+
+        // In this iteration each subject is considered and the Distance function is called
+
+        var i;
+
+        for (i = 0; i < g_aSubjects.length; ++i)
+        {
+            var ptSubj = GetSubjectCenter(g_aSubjects[i]);
+
+            if (ptSubj != null)
+            {
+                var x2 = ptSubj.x;
+                var y2 = ptSubj.y;
+
+                if (x1 != x2 && y1 != y2)
+                {
+                    var Dist = Distance(ptFocal, ptSubj);
+
+
+                    // Find the minimum, the first value encountered is set as the minimum with the null comparison 
+
+                    if (min_dist == null)
+                    {
+                        min_dist = Dist
+                    }
+
+                    if (Dist < min_dist) 
+                    {
+                        min_dist = Dist;
+                    }
+                }
+            }
+        }
+    }
+
+    // Returns the value of minimum distance for this Focal subject and this sample
+
+    if (min_dist != null)
+    {
+        SetOutput(min_dist);
+    }
+    else
+    {
+        SetOutputMissing();
+    }
+}

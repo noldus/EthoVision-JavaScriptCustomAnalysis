@@ -1,0 +1,27 @@
+// Body Area - Continuous
+
+// This code returns the area of the detected subject in default units (mm2) 
+
+
+var x = 0;
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{  
+   var x = GetArea();    
+   if (x != null)   
+   {      
+      SetOutput(x);   
+   }   
+   else  
+   {      
+      SetOutputMissing();   
+   }
+}

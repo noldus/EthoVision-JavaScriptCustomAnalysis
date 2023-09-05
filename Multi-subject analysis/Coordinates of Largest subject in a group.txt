@@ -1,0 +1,73 @@
+// Coordinates of the largest subject - Continuous
+
+// This code extracts the coordinates x and y of the largest subject in a group at each sample time
+// Use this code for example to find the largest subject when EthoVision swaps the ID of the subjects
+
+// Enter here the names of all the subjects as they are defined in EthoVision XT
+// Delete the subject names not in the experiment
+// Enter the minimum size of the largest subject (in square mm) 
+// Remember to specify 2 as Number of outputs in the JavaScript window of the Analysis profile
+
+const g_aSubjects = ["Subject 1", "Subject 2", "Subject 3", "Subject 4", "Subject 5", "Subject 6", "Subject 7","Subject 8", "Subject 9", "Subject 10", "Subject 11"];
+const g_filtersize = 200
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+    var max_area;
+    var pt_max;
+    var x_max;
+    var y_max;
+
+        // In this iteration each subject is considered and the Distance function is called
+
+        var i;
+
+        for (i = 0; i < g_aSubjects.length; ++i)
+        {
+	         var AreaSubj = GetSubjectArea(g_aSubjects[i]);
+
+            if (AreaSubj != null)
+            {
+                // Find the maximum, the first value encountered is set as the minimum with the null comparison 
+
+                if (max_area == null)
+                {
+                    max_area = 0;
+                }
+
+                if (AreaSubj > max_area) 
+                {
+                    max_area = AreaSubj;
+ 		              pt_max = GetSubjectCenter(g_aSubjects[i]);
+		              x_max = pt_max.x;
+		              y_max = pt_max.y;
+
+                }
+                
+            }
+        }
+
+
+    // }
+
+    // Returns the values of the xy coordinates of the subject with maximal area at this sample
+
+    if (max_area > g_filtersize)
+    {
+        SetOutput(0, x_max);
+        SetOutput(1, y_max);
+    }
+    else
+    {
+        SetOutputMissing(0);
+        SetOutputMissing(1);
+    }
+}

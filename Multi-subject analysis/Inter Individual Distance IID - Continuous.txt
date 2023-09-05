@@ -1,0 +1,101 @@
+// Inter Individual Distance (IID) - Continuous
+
+// This ode calculates the average distance of each subject to all the other subjects and stores a value for each sample
+// Assumptions: At least two subjects, distance is based on the center points
+// IID is calculated for each focal subject
+// Unit is mm
+
+// Enter the names of the subjects as they are defined in the Experiment Settings in your experiment
+// Delete the names of subjects not used e.g. Subjects 5 to 7
+// Add more subject names if necessary e.g. "Subject 8"
+
+const g_aSubjects = ["Subject 1", "Subject 2", "Subject 3", "Subject 4", "Subject 5", "Subject 6", "Subject 7","Subject 8", "Subject 9", "Subject 10", "Subject 11", "Subject 12", "Subject 13", "Subject 14", "Subject 15", "Subject 16"];
+
+// Function to calculate distance between two points
+function Distance(pt1, pt2)
+{
+    var dx = pt1.x - pt2.x;
+    var dy = pt1.y - pt2.y;
+
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+
+function Process()
+{
+    var ptFocal = GetCenter();
+    var avg;
+
+    if (ptFocal != null)
+    {
+        var x1 = ptFocal.x;
+        var y1 = ptFocal.y;
+
+        // In this iteration each subject i is considered and the distance between ptFocal and ptSubj for all Subjects i is calculated
+
+        var i;
+        var avg = 0;
+        var nTotal = 0;
+
+        for (i = 0; i < g_aSubjects.length; ++i)
+        {
+           var ptSubj = GetSubjectCenter(g_aSubjects[i]);
+
+           // If the subject i exists, take the coordinates of the center 
+
+           if (ptSubj != null)
+           {
+            
+              var x2 = ptSubj.x;
+              var y2 = ptSubj.y;
+
+              // Check that subject i is not the same as the focal otherwise skip
+ 
+              if (x1 != x2 && y1 != y2)
+              {
+                  var Dist = Distance(ptFocal, ptSubj);
+                  
+                  avg += Dist;
+                  ++nTotal;
+
+              }
+
+          }
+
+       // This is the end of the for loop
+       }
+
+      // Calculates the average distance
+
+       if (nTotal != 0)
+       {
+           avg /= nTotal;
+       }
+       else
+       {
+          avg = null;
+       }
+
+    }
+
+    // Returns the value of average distance between Focal subject and other subjects for this sample
+
+    if (avg != null)
+    {
+        SetOutput(avg);
+
+    }
+    else
+    {
+        SetOutputMissing();
+    };
+
+}

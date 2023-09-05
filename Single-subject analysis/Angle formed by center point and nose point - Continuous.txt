@@ -1,0 +1,57 @@
+// Angle formed by the center point and the nose point - Continuous
+
+// This code calculates the provides the angle in degrees formed by the nose and the center point
+// Uses the Heading function to calculate angles
+
+// This function calculates the angle formed by two points and the x-axis
+
+function Head(pt1, pt2)
+{
+  var hd;
+
+  if (pt1 != null && pt2 != null)
+  {
+     hd = Heading(pt1, pt2);
+  }
+
+  return hd;
+}
+
+// This function returns the angle in degrees
+
+function toDegrees(angle)
+{
+  return angle * (180 / Math.PI);
+}
+
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+   var Angle;
+
+   var ptNose = GetNose();
+   var ptCog  = GetCenter();
+     
+   if (ptNose != null && ptCog != null)
+   {
+      Angle = Head(ptNose, ptCog);
+      Angle = toDegrees(Angle); 
+    }
+
+   if (Angle != null)
+   {  
+      SetOutput(Angle);
+   }
+   else
+   {
+      SetOutputMissing();   
+   }
+}

@@ -1,0 +1,33 @@
+// Number of pixels changed - Continuous
+
+// This code returns the number of pixels that changed their gray scale value
+// between the previous and the current sample
+// The value of g_arena is the area of the arena that you can calculate from the coordinates of the arena in the Arena settings
+// This calculation is easy if the outline of the arena is a rectangle or a circle
+// Edit the value of g_arena in pixels
+
+var y = 0;
+
+const g_arena = 99999
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+   var y = GetPixelChange();
+ 
+   if (y != null)
+   {
+      SetOutput(y*g_arena);
+   }
+   else
+   {
+      SetOutputMissing();
+   }
+}

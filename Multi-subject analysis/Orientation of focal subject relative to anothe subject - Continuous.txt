@@ -1,0 +1,98 @@
+// Orientation of focal subject relative to another subject - Continuous
+
+// The code calculates the difference in the orientation between the two subjects
+// For each subject the orientation is calculated using the segment joining the Nose and the Tailbase points
+// relative to the horizontal axis. Unit is degrees
+// Use this code in 2-subject interaction tests
+// NOTE This variable does not tell if one is moving toward or away from the other
+// Rather it compares the orientation of the two subjjects
+// The output value is 0 if the subjects point to the same direction, +/- 180 if they point to the opposite direction 
+// the value is positive if the nose-tail vector of the other subject is oriented to the left of the vector of the focal subject
+// the value is negative in the other case
+
+//Enter here the names of the two subjects as they are defined in the Experiment Settings in EthoVision XT
+
+const g_aSubjects = ["Subject 1", "Subject 2"];
+
+// This function converts the angle values from radians to degrees
+
+function toDegrees(angle) 
+{
+  return angle * (180 / Math.PI);
+}
+
+// This function calculates the angle formed by two points and the horizontal x-axis
+// Uses the built-in EthoVision XT Heading function
+
+function Head(pt1, pt2)
+{
+  var hd;
+
+  if (pt1 != null && pt2 != null)
+  {
+     hd = Heading(pt1, pt2);
+  }
+
+  return hd;
+}
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+    var ptSubj1 = GetSubjectNose(g_aSubjects[0]);
+    var ptSubj2 = GetSubjectNose(g_aSubjects[1]);
+    var ptSubj3 = GetSubjectTail(g_aSubjects[0]);
+    var ptSubj4 = GetSubjectTail(g_aSubjects[1]);
+
+    var diffOr;
+
+    if (ptSubj1 != null && ptSubj2 != null && ptSubj3 != null && ptSubj4 != null)
+    {
+        var hd1 = Head(ptSubj3, ptSubj1);
+        var hd2 = Head(ptSubj4, ptSubj2);
+
+        // The angle can be invalid if two points overlap
+
+        if (hd1 != null && hd2 != null)
+        {
+            if (IsSubjectActor(g_aSubjects[0]))
+            {
+                diffOr = hd1 - hd2;
+            }
+            else
+            {
+                diffOr = hd2 - hd1;
+            }
+
+            diffOr = toDegrees(diffOr)
+
+            if (diffOr > 180)
+            { 
+               diffOr = 360 - diffOr;
+            }
+            if (diffOr < -180)
+            {
+               diffOr = 360 + diffOr;
+            }
+            
+        }
+    }
+
+   // use this code if you want to have the absolute value
+   // if (diffOr < 0)
+   // {
+   //    diffOr = -1 * diffOr;
+   // }
+
+    SetOutput(diffOr);
+
+}
+
+

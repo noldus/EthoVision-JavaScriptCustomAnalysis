@@ -1,0 +1,241 @@
+// Percentage of correct choices reached - Event
+
+// This code finds the moment that a specific percentage of correct choices is reached
+// The subject enters a target zone using one of three possible entries - right middle and left.
+// The percentage is calculated using a running average
+// The code uses the transitions Floor - entry zone - Target
+
+//Edit the names of the zones
+
+const g_Correct = 'left';
+const g_Incorrect1 = 'middle';
+const g_Incorrect2 = 'right';
+const g_Target = 'Target';
+const g_Floor = 'Floor';
+
+//Enter the value of g_nSamplesQueue for the length of the running average window (default 30)
+
+const g_nSamplesQueue = 30;
+
+//Enter the threshold in percantage - e.g. 80 percent
+
+const g_Threshold = 60;
+
+//This simply counts the number of transitions to do a final check g_nTrans >= g_nSamplesQueue
+var g_nTrans = 0;
+
+//This marks the time before the correct percentage is reached
+var g_bDone = false;
+
+//Variables for current and previous zone
+
+var g_zone;
+var g_zonePrev;
+
+//Variable for flag
+
+var g_flagFloor = 0;
+
+
+//This function creates an array that stores all the last g_nSamplesQueue for calculating the average
+
+function RunningAverageQueueMissing(nSamplesMax)
+{
+    this.m_nSamplesMax = nSamplesMax;
+    this.m_aValues     = [];
+    
+    this.Add = function(value) 
+    {
+        while (this.m_aValues.length >= this.m_nSamplesMax)
+        {
+          this.m_aValues.shift();
+        }
+        this.m_aValues.push(value);
+    };
+
+    this.Clear = function() 
+    {
+        this.m_aValues.length = 0;
+    };
+
+    this.GetAvg = function() 
+    {
+        var avg    = 0;
+        var nTotal = 0;
+
+        for (var n = 0; n != this.m_aValues.length; n++)
+        {
+            if (this.m_aValues[n] != null)
+            {
+               avg += this.m_aValues[n]; 
+               ++nTotal;
+            }
+        }
+
+        if (nTotal != 0)
+        {
+            avg /= nTotal;
+        }
+        else
+        {
+            avg = null;
+        }
+
+        return avg;
+    };
+
+}
+
+
+//This calls the Running average queue function and stores the values in the queue 
+var g_queue = new RunningAverageQueueMissing(g_nSamplesQueue);
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+   //get the current datapoint
+   var pt   = GetCenter();
+
+
+   //Assign the value of g_zone
+
+   if (pt)
+   {
+
+      if (IsInZone(g_Target, pt))
+      {
+         g_zone = g_Target;
+      }
+
+      if (IsInZone(g_Correct, pt))
+      {
+         g_zone = g_Correct;
+      }
+     
+      if (IsInZone(g_Incorrect1, pt))
+      {
+         g_zone = g_Incorrect1;
+      }
+
+      if (IsInZone(g_Incorrect2, pt))
+      {
+         g_zone = g_Incorrect2;
+      }
+
+      if (IsInZone(g_Floor, pt))
+      {
+         g_zone = g_Floor;
+
+         //remember that point was in Floor zone
+         g_flagFloor = 1;
+      }
+
+
+      // Now look for transitions
+
+      if (g_zonePrev)
+      {
+
+          if (g_zone == g_Target && g_zonePrev == g_Correct)
+          {
+             if (g_flagFloor != 0)
+             {
+                //Here I found a correct transition 
+                CorrTrans = 1;
+                ++g_nTrans;
+
+                //Add the transition to the queue
+                g_queue.Add(CorrTrans);
+
+                //Reset flagFloor
+                g_flagFloor = 0;
+             }
+          }
+
+
+          if (g_zone == g_Target && g_zonePrev == g_Incorrect1)
+          {
+             if (g_flagFloor != 0)
+             {
+                //Here I found an incorrect transition Incorrect1
+                CorrTrans = 0;
+                ++g_nTrans;
+
+                //Add the transition to the queue
+                g_queue.Add(CorrTrans);
+
+                //Reset flagFloor
+                g_flagFloor = 0;
+             }
+          }
+
+
+          if (g_zone == g_Target && g_zonePrev == g_Incorrect2)
+          {
+             if (g_flagFloor != 0)
+             {
+
+                //Here I found an incorrect transition Incorrect2
+                CorrTrans = 0;
+                ++g_nTrans;
+ 
+                //Add the transition to the queue
+                g_queue.Add(CorrTrans);
+
+                //Reset flagFloor
+                g_flagFloor = 0;
+             }
+
+          }
+
+      }
+
+   }
+
+   //Update the zone at the previous sample
+
+   g_zonePrev = g_zone;
+
+   //Calculate the new percentage of correct choices
+
+   if (g_nTrans >= g_nSamplesQueue)
+
+      {
+         var percCorr = g_queue.GetAvg();
+         percCorr = percCorr * 100;
+      }
+
+   //Check the value of the percentage
+
+   if (percCorr >= g_Threshold && g_bDone === false)
+   {
+      bEvent = true;
+      g_bDone = true;
+   }
+   else
+   {
+      bEvent = false;
+   }
+
+   //Output the value of percentage of correct choices
+
+   if (bEvent)
+   {
+      if (g_nTrans >= g_nSamplesQueue)
+      {
+         SetOutput(bEvent);
+      }
+   }
+    else
+   { 
+        SetOutputMissing();
+   }
+
+}

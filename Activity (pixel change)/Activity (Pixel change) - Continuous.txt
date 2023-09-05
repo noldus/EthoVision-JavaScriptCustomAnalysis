@@ -1,0 +1,29 @@
+// Activity (Pixel change) - Continuous
+
+// This is a javaScript continuous parameter which provides the percentage of pixels
+// that change their gray scale value between the previous sample and the current sample
+// It is expressed as percentage of the area of the Arena and is equal to EthoVision XT Activity
+// Whether a pixel changes its gray scale value depends on the Activity settings in your experiment
+
+var x = 0;
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{  
+   var x = GetPixelChange();    
+   if (x != null)   
+   {      
+      SetOutput(x*100);   
+   }   
+   else  
+   {      
+      SetOutputMissing();   
+   }
+}

@@ -1,0 +1,70 @@
+// Split the track in bins based on velocity - State
+
+// This JavaScript code calculates velocity in bins [0, 10), [10, 20), [20, 30), [30+).
+// Do not forget to specify 4 as the Number of Outputs in the JavaScript State window 
+// Use this code in the Analysis profile to calculate for example the total time that 
+// the subject moved within specific velocity limits 
+// Use this code in the Data profile to select tracks based on velocity
+
+// Edit the limits of the velocity bins in mm/s
+
+const g_velocityLow   = 0;
+const g_velocityHigh1 = 10;
+const g_velocityHigh2 = 20;
+const g_velocityHigh3 = 30;
+
+// definition of variables
+
+var   g_tPrev;
+var   g_ptPrev;
+
+// This function calculates the 2D distance between two consecutive sample points
+
+function Distance(pt1, pt2)
+{
+    var dx = pt1.x - pt2.x;
+    var dy = pt1.y - pt2.y;
+
+   return Math.sqrt(dx * dx + dy * dy);
+}
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+   var bOk1;
+   var bOk2;
+   var bOk3;
+   var bOk4;
+
+   var t    = GetSampleTime();
+   var pt   = GetCenter();
+   
+   if (pt)
+   {
+       if (g_ptPrev)
+       {
+          var distance = Distance(pt, g_ptPrev);
+          var velocity = distance / (t - g_tPrev)
+
+          bOk1 = (velocity >= g_velocityLow)   && (velocity < g_velocityHigh1);
+          bOk2 = (velocity >= g_velocityHigh1) && (velocity < g_velocityHigh2);
+          bOk3 = (velocity >= g_velocityHigh2) && (velocity < g_velocityHigh3);
+          bOk4 = (velocity >= g_velocityHigh3);
+       }
+   }
+
+   g_tPrev  = t;
+   g_ptPrev = pt;
+
+   SetOutput(0, bOk1);
+   SetOutput(1, bOk2);
+   SetOutput(2, bOk3);
+   SetOutput(3, bOk4);
+}

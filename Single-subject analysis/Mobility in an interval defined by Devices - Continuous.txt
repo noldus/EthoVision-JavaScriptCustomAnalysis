@@ -1,0 +1,124 @@
+// Mobility during an interval defined by devices - Continuous
+
+// This code calculates Mobility of a subject in one interva within a series defined by hardare devices A and B
+// Use this for example with devices activated in subrules.
+// For example in a fear conditioning test, devices are activated a number of times within a trial
+// This code picks the k-th instance of the interval defined when both devices are activated 
+
+const g_strDevA     = "Device A";
+const g_strDevB     = "Device B";
+const g_strCmdHigh  = "Output 1 High";
+const g_strCmdLow   = "Output 1 Low";
+
+// Enter the instance of the interval e.g. 2 for the second instance in a series
+
+const g_nInterval   = 2;
+
+// This function creates the interval based on the device strDev
+
+function Interval(strDev, strCmdStart, strCmdStop)
+{
+   this.m_strDev        = strDev;
+   this.m_strCmdStart   = strCmdStart;
+   this.m_strCmdStop    = strCmdStop;
+
+   this.m_bState        = false;
+   this.m_n             = 0;
+
+   this.Process = function() 
+   {
+      if (this.m_bState)
+      {
+         if (this.CheckStop())
+         {
+            this.m_bState = false;
+         }
+      }
+      else
+      {
+         if (this.CheckStart())
+         {
+            this.m_bState = true;
+            ++this.m_n;
+         }
+      }
+   };
+
+   this.IsState = function() 
+   {
+        return this.m_bState;
+   };
+
+   this.GetOcc = function() 
+   {
+        return this.m_n;
+   };
+
+   this.CheckStart = function() 
+   {
+       return GetCommand(this.m_strDev, this.m_strCmdStart);
+   };
+
+   this.CheckStop = function() 
+   {
+      return GetCommand(this.m_strDev, this.m_strCmdStop);
+   };
+}
+
+// This function calculates the Mobility as EthoVision XT would do
+
+function Mobility(area, ca)
+{
+    var mob = null;
+
+    if (g_prevArea && area)
+    {
+        mob = ca / (g_prevArea + area);
+
+        if (mob > 1)
+        {
+            // in case rounding errors
+            mob = 1;
+        }
+    }
+
+    g_prevArea = area;
+
+    return mob;
+}
+
+
+var g_intvDevA = new Interval(g_strDevA, g_strCmdHigh, g_strCmdLow);
+var g_intvDevB = new Interval(g_strDevB, g_strCmdHigh, g_strCmdLow);
+var g_prevArea = null;
+
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+    g_intvDevA.Process();
+    g_intvDevB.Process();
+
+    var area = GetArea();
+    var ca   = GetChangedArea();
+
+    var mob = Mobility(area, ca);
+
+    if (g_intvDevA.IsState() && g_intvDevB.IsState() && g_intvDevA.GetOcc() == g_nInterval)
+    {
+        // ok
+    }
+    else
+    {
+        mob = undefined;
+    }
+
+    SetOutput(mob);
+}

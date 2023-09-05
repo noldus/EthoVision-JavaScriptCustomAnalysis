@@ -1,0 +1,138 @@
+// Acceleration of a body point - Smoothed - Continuous
+
+// This code calculates the running average acceleration of a body point
+// Default is center point
+// To analyze nose or tail base replace GetCenter with GetNose or GetTail
+
+// Enter the value of g_nSamplesQueue for the length of the running average window (default 5)
+
+const   g_nSamplesQueue = 5;
+
+// Variables for previous point
+var g_tPrev;
+var g_ptPrev;
+
+// Variables for second previous point
+var g_tPrev2
+var g_PtPrev2
+
+// This function calculates the distance between two points
+function Distance(pt1, pt2)
+{
+    var dx = pt1.x - pt2.x;
+    var dy = pt1.y - pt2.y;
+
+   return Math.sqrt(dx * dx + dy * dy);
+}
+
+// This function creates an array that stores all the last g_nSamplesQueue for calculating the average
+
+function RunningAverageQueueMissing(nSamplesMax)
+{
+    this.m_nSamplesMax = nSamplesMax;
+    this.m_aValues     = [];
+    
+    this.Add = function(value) 
+    {
+        while (this.m_aValues.length >= this.m_nSamplesMax)
+        {
+          this.m_aValues.shift();
+        }
+
+        this.m_aValues.push(value);
+    };
+
+    this.Clear = function() 
+    {
+        this.m_aValues.length = 0;
+    };
+
+    this.GetAvg = function() 
+    {
+        var avg    = 0;
+        var nTotal = 0;
+
+        for (var n = 0; n != this.m_aValues.length; n++)
+        {
+            if (this.m_aValues[n] != null)
+            {
+               avg += this.m_aValues[n]; 
+               ++nTotal;
+            }
+        }
+
+        if (nTotal != 0)
+        {
+            avg /= nTotal;
+        }
+        else
+        {
+            avg = null;
+        }
+
+        return avg;
+    };
+}
+
+//This calls the Running average queue function and stores the values in the queue 
+var g_queue = new RunningAverageQueueMissing(g_nSamplesQueue);
+
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+   //get the current datapoint and time
+   var t    = GetSampleTime();
+   var pt   = GetCenter();
+
+   //Calculate acceleration if the pt and the previous 2 points are known
+   if (pt)
+   {
+       if (g_ptPrev)
+       {
+           if (g_ptPrev2)
+           {
+                 var distance1 = Distance(pt, g_ptPrev);
+                 var velocity1 = distance1 / (t - g_tPrev);
+
+                 var distance2 = Distance(g_ptPrev, g_ptPrev2);
+                 var velocity2 = distance2 / (g_tPrev - g_tPrev2);
+
+                 var acceleration = (velocity1 - velocity2) / (t - g_tPrev);
+
+           }
+       }
+    }
+
+   //Update the previous 2 points before the next cycle
+   g_tPrev2  = g_tPrev;
+   g_ptPrev2 = g_ptPrev;
+   g_tPrev  = t;
+   g_ptPrev = pt;
+
+
+   //Add the current value of acceleration to the queue
+
+    g_queue.Add(acceleration);
+
+   //Calculate the new running average
+
+   var AccelerAvg = g_queue.GetAvg();
+
+    
+   if (AccelerAvg)
+   {
+        SetOutput(AccelerAvg);
+   }
+    else
+   { 
+        SetOutputMissing();
+   }
+}

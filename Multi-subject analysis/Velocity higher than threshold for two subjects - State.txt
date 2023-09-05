@@ -1,0 +1,71 @@
+// Velocity higher than threshold for both subjects - State
+
+// This code calculates the velocity of two subjects
+// and ouptuts a state variable with value "true" when both subjects are faster than the threshold
+// Velocity is expressed in mm per second
+// This is an arena-level variable, that is, values will be the same for both subjects
+
+
+//Enter here the threshold velocity g_velocity
+
+const g_velocity   = 20;
+
+//Enter here the names of the two subjects as they are defined in the Experiment Settings in EthoVision XT
+
+const g_aSubjects = ["Subject 1", "Subject 2"];
+
+//Initialize the variables
+
+var g_aPointsPrev = [null, null];
+var g_tPrev;
+
+var vel1;
+var vel2;
+
+// This function calculates the distance between two consecutive points 
+
+function Distance(pt1, pt2)
+{
+    var dx = pt1.x - pt2.x;
+    var dy = pt1.y - pt2.y;
+
+   return Math.sqrt(dx * dx + dy * dy);
+}
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+
+   var bOk;
+
+   var t    = GetSampleTime();
+   var ptSubj1 = GetSubjectCenter(g_aSubjects[0]);
+   var ptSubj2 = GetSubjectCenter(g_aSubjects[1]);
+   
+
+   if (ptSubj1 != null && ptSubj2 != null && g_aPointsPrev[0] != null && g_aPointsPrev[1] != null)
+   {
+      var dist1 = Distance(g_aPointsPrev[0], ptSubj1);
+      var dist2 = Distance(g_aPointsPrev[1], ptSubj2);
+
+      var vel1 = dist1 / (t - g_tPrev);
+      var vel2 = dist2 / (t - g_tPrev);
+
+      bOk = (vel1 >= g_velocity) && (vel2 >= g_velocity);
+   }
+
+   g_tPrev  = t;
+
+   g_aPointsPrev[0] = ptSubj1;
+   g_aPointsPrev[1] = ptSubj2;
+
+   SetOutput(bOk);
+
+}
