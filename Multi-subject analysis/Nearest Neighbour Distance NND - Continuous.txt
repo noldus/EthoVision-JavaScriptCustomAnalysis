@@ -2,7 +2,7 @@
 
 // Calculates the nearest neighbour distance for each subject and at each sample
 // Assumptions: At least two subjects, distance is based on the center points
-// IID is calculated for each focal subject
+// NND is calculated for each focal subject
 // Unit is mm
 
 // Edit the names of the subjects as they are defined in the Experiment Settings in your experiment

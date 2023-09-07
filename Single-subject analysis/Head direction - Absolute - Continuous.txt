@@ -1,0 +1,45 @@
+// Head direction - Absolute - Continuous
+
+// This code returns the absolute value of Head direction in degrees
+// Use the absolute head direction if you are interested in temporal changes in the value
+// With the absolute value you get rid of the transitions from - 180 to +180 and vice versa
+
+// Initialize the variables
+
+var hd = 0;
+var hd_abs = 0;
+var hd_deg = 0;
+
+// This function converts angle values from Radians to Degrees
+
+function toDegrees(angle) 
+{
+  return angle * (180 / Math.PI);
+}
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{  
+   // Get the head direction in radians
+
+   var hd = GetViewDirection();
+
+   if (hd != null)   
+   {      
+      hd_abs = Math.abs(hd);
+      hd_deg = toDegrees(hd);
+
+      SetOutput(hd_deg);   
+   }   
+   else  
+   {      
+      SetOutputMissing();   
+   }
+}
