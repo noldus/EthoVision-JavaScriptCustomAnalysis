@@ -2,8 +2,12 @@
 This repository contains JavaScript scripts for processing EthoVision XT data.
 
 Types of variables
-Single-subject: These scripts process the data of focal subjects. You can use them with single-subject trials but also with multi-subject trials. In the latter case each subjects is processed separately.
-Multi-subject: These scripts analyze interactions between subjects, or produce arena-level results (e.g. when counting subjects). 
+
+Activity: These scripts process the Activity data, that is, the sample-by-sample change in pixel value. You can use them to analyze general movement and immobility in the arena (freezing, shoal activity). They do not focus on specific subjects.
+
+Single-subject: These scripts process the data of focal subjects. You can use them with single-subject trials but also with multi-subject trials. In the latter case each subject is processed separately.
+
+Multi-subject: These scripts analyze interactions between subjects, or produce arena-level results (e.g. when counting subjects in a zone). 
 
 
 Instructions
