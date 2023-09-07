@@ -3,7 +3,7 @@ This repository contains JavaScript scripts for processing EthoVision XT data.
 
 Types of variables
 
-Single-subject: These scripts process the data of focal subjects. You can use them with single-subject trials but also with multi-subject trials. In the latter case each subjects is processed separately.
+Single-subject: These scripts process the data of focal subjects. You can use them with single-subject trials but also with multi-subject trials. In the latter case each subject is processed separately.
 
 Multi-subject: These scripts analyze interactions between subjects, or produce arena-level results (e.g. when counting subjects). 
 
