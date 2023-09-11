@@ -1,0 +1,72 @@
+// Non-movement bouts with a minimum duration - State
+
+// This code calculates the "Not Moving" dependent variable, but adds a minimum duration
+
+// "Not Moving" prior to meeting this minimum duration is not counted, theefore the duration of each bout will be reduced by this minimum
+
+// Set the g_MinimumDuration to the minimum number of *samples* (not the minimum time) of non-movement
+
+const g_MinimumDuration = 25;
+
+// Set the g_VelocityThreshold to the maximum speed that can be considered "not moving" in units of *millimeters* per second (not cm/s).
+
+const g_VelocityThreshold = 30;
+
+// Initialize variables
+
+var   g_SleepDuration = 0;
+var   g_Sleep;
+var   g_ptPrev;
+var   g_tPrev;
+
+function Distance(pt1, pt2)
+{
+    var dx = pt1.x - pt2.x;
+    var dy = pt1.y - pt2.y;
+
+   return Math.sqrt(dx * dx + dy * dy);
+}
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+   //debugger;
+
+   var pt   = GetCenter();
+   var t    = GetSampleTime();
+   
+   if (pt)
+   {
+       if (g_ptPrev)
+       {
+          var distance = Distance(pt, g_ptPrev);
+          var velocity = distance / (t - g_tPrev);
+
+          if (velocity <= g_VelocityThreshold)
+          {
+              g_SleepDuration += 1;
+          }
+          else
+          {
+              g_SleepDuration = 0;
+          }
+       }
+
+       g_Sleep = (g_SleepDuration >= g_MinimumDuration);
+	   
+
+       g_ptPrev = pt;
+       g_tPrev  = t;
+   }
+
+  
+   SetOutput(g_Sleep);
+
+}

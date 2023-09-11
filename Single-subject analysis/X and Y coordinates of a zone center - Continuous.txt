@@ -1,0 +1,41 @@
+// X and Y Coordinates of a zone center - Continuous
+
+// This code finds the X,Y coordinates of the center point of the selected zone
+// The outputs are titled 0 (X coordinate) and 1 (Y coordinate)
+
+// Do not forget to specify 2 as the Number of Outputs in the JavaScript window
+
+// Tip: if you want to get the center of the Arena, define a new zone group 
+// in the Arena Settings and create a zone that covers the entire arena
+
+// Edit the value of g_zone with the name of the zone of interest
+
+const g_zone = "A2";
+
+// Edit the conversion factor (1 for coordinates in mm, 10 for cm, 100 for m)
+
+const g_unit = 10
+ 
+function Start()
+{
+}
+ 
+function Stop()
+{
+}
+ 
+function Process()
+{
+   var pt = GetPointPoi(g_zone);
+ 
+   if (pt)
+   {
+      SetOutput(0, pt.x/g_unit);
+      SetOutput(1, pt.y/g_unit);
+   }
+   else
+   {
+      SetOutputMissing(0);
+      SetOutputMissing(1);
+   }
+}

@@ -1,0 +1,90 @@
+// Activity - Smoothed - Continuous
+
+// This code produces the same results as the Activity dependent variable
+// The value ranges from 0 to 100 %
+
+// Edit the Smoothing constant to specify the Averaging interval
+
+const Smoothing = 10;
+
+var g_queue = new RunningAverageQueueMissing(Smoothing);
+
+// Function to calculate the running average
+
+function RunningAverageQueueMissing(nSamplesMax)
+{
+    this.m_nSamplesMax = nSamplesMax;
+    this.m_aValues     = [];
+    
+    this.Add = function(value) 
+    {
+        while (this.m_aValues.length >= this.m_nSamplesMax)
+        {
+          this.m_aValues.shift();
+        }
+
+        this.m_aValues.push(value);
+    };
+
+    this.GetCount = function() 
+    {
+        return this.m_aValues.length;
+    };
+
+    this.Clear = function() 
+    {
+        this.m_aValues.length = 0;
+    };
+
+    this.GetAvg = function() 
+    {
+        var avg    = 0;
+        
+        var nTotal = 0;
+
+        for (var n = 0; n != this.m_aValues.length; n++)
+        {
+            if (this.m_aValues[n] != null)
+            {
+               avg += this.m_aValues[n]; 
+               ++nTotal;
+            }
+        }
+
+        if (nTotal != 0)
+        {
+            avg /= nTotal;
+        }
+        else
+        {
+            avg = null;
+        }
+
+        return avg;
+    };
+}
+
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+   var Activity = GetPixelChange();
+
+   if (Activity != null)
+   {  
+      g_queue.Add(Activity);
+      SetOutput(g_queue.GetAvg()*100);
+   }
+   else
+   {
+      SetOutputMissing();
+   }
+   
+}

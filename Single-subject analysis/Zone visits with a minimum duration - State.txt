@@ -1,0 +1,42 @@
+// Zone visits with minimum duration - State
+
+//This code calculates the "In Zone" dependent variable, but adds a minimum duration
+//"In Zone" prior to meeting this minimum duration is not counted as an entry, therefore the duration of each entry will be reduced by this minimum
+
+//Set the g_MinimumDuration to the minimum number of *samples* (not the minimum time)
+//Set the g_strZone to the name of the zone of interest
+
+const g_strZone      = "Zone 1";
+const g_MinimumDuration = 30;
+
+var   g_ZoneDuration = 0;
+var   g_Zone;
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+   var pt   = GetCenter();
+  
+   if (pt)
+   {
+       if (IsInZone(g_strZone, pt))
+       {
+           g_ZoneDuration += 1;
+       }
+       else
+       {
+           g_ZoneDuration = 0;
+       }
+       g_Zone = (g_ZoneDuration >= g_MinimumDuration);
+   }
+
+   SetOutput(g_Zone);
+}
+

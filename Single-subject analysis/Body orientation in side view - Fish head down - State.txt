@@ -1,0 +1,85 @@
+// Orientation of focal subject for side view - Head Down - State
+
+// The is code calculates the angle formed by the segment joining the Nose and the Tailbase points relative to the horizontal axis. Unit is degrees
+// The output is a state "true" when the angle is between -25 and -155 degrees (head down)
+// An additional filter based on the body area in mm2 ignores the data points where the subject is partly detected
+
+// Edit the body area threshold
+
+const g_Area = 350;
+
+// This function converts the angle values from radians to degrees
+
+function toDegrees(angle) 
+{
+  return angle * (180 / Math.PI);
+}
+
+var bDown = false;
+
+// This function calculates the angle formed by two points and the horizontal x-axis
+// Uses the built-in EthoVision XT Heading function
+
+function Angle(pt1, pt2)
+{
+  var hd;
+
+  if (pt1 != null && pt2 != null)
+  {
+     hd = Heading(pt1, pt2);
+  }
+
+  return hd;
+}
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+    var ptN = GetNose();
+    var ptT = GetTail();
+    var bodyArea = GetArea();
+
+    if (ptN != null && ptT != null)
+    {
+        var or = Angle(ptT, ptN);
+        or = toDegrees(or);
+        or = -1*or;
+
+        // The angle can be invalid if two points overlap
+
+        if (or != null)
+        {
+        
+           if (or <= -25 && or >= -155)
+           {
+               bDown = true;
+           } 
+              
+           else
+           {
+               bDown = false;
+           }
+
+        }
+
+        if (bDown && bodyArea >= g_Area)
+        { 
+           SetOutput(bDown);
+        }
+        else
+        {
+            SetOutputMissing();
+        }
+
+    }
+}
+
+
+
