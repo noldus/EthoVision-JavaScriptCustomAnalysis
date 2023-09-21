@@ -1,0 +1,122 @@
+// Distance moved - Cumulative in the last k samples - Continuous
+
+// This code calculates the running cumulative distance moved of a body point
+// Default is center point
+// To analyze nose or tail base replace GetCenter with GetNose or GetTail
+
+// Enter the value of g_nSamplesQueue for the length of the cumulative window (default 5)
+
+const   g_nSamplesQueue = 5;
+
+// Variables for previous point
+var g_tPrev;
+var g_ptPrev;
+
+// This function calculates the distance between two points
+function Distance(pt1, pt2)
+{
+    var dx = pt1.x - pt2.x;
+    var dy = pt1.y - pt2.y;
+
+   return Math.sqrt(dx * dx + dy * dy);
+}
+
+// This function creates an array that stores all the last g_nSamplesQueue for calculating the average
+
+function RunningTotalQueueMissing(nSamplesMax)
+{
+    this.m_nSamplesMax = nSamplesMax;
+    this.m_aValues     = [];
+    
+    this.Add = function(value) 
+    {
+        while (this.m_aValues.length >= this.m_nSamplesMax)
+        {
+          this.m_aValues.shift();
+        }
+
+        this.m_aValues.push(value);
+    };
+
+    this.Clear = function() 
+    {
+        this.m_aValues.length = 0;
+    };
+
+    this.GetSum = function() 
+    {
+        var sum    = 0;
+        var nTotal = 0;
+
+        for (var n = 0; n != this.m_aValues.length; n++)
+        {
+            if (this.m_aValues[n] != null)
+            {
+               sum += this.m_aValues[n]; 
+               ++nTotal;
+            }
+        }
+
+        if (nTotal != 0)
+        {
+            // sum is valid
+        }
+        else
+        {
+            sum = null;
+        }
+
+        return sum;
+    };
+}
+
+//This calls the Running total queue function and stores the values in the queue 
+var g_queue = new RunningTotalQueueMissing(g_nSamplesQueue);
+
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+   //get the current datapoint and time
+   var t    = GetSampleTime();
+   var pt   = GetCenter();
+
+   //Calculate the distance moved if the pt and the previous point are known
+   if (pt)
+   {
+       if (g_ptPrev)
+       {
+           var distance = Distance(pt, g_ptPrev);
+       }
+    }
+
+   //Update the previous point before the next cycle
+
+   g_ptPrev = pt;
+
+
+   //Add the current value of distance to the queue
+
+    g_queue.Add(distance);
+
+   //Calculate the new running average
+
+   var DistTot = g_queue.GetSum();
+
+    
+   if (DistTot)
+   {
+        SetOutput(DistTot);
+   }
+    else
+   { 
+        SetOutputMissing();
+   }
+}

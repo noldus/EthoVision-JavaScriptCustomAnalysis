@@ -1,8 +1,8 @@
 // Head direction - Absolute - Continuous
 
 // This code returns the absolute value of Head direction in degrees
-// Use the absolute head direction if you are interested in temporal changes in the value
 // With the absolute value you get rid of the transitions from - 180 to +180 and vice versa
+// For example when you want to isolate the moments of horizontal movement (around +/- 180 degrees)
 
 // Initialize the variables
 

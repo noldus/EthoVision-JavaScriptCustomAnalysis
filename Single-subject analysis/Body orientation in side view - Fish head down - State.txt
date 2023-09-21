@@ -50,7 +50,6 @@ function Process()
     {
         var or = Angle(ptT, ptN);
         or = toDegrees(or);
-        or = -1*or;
 
         // The angle can be invalid if two points overlap
 

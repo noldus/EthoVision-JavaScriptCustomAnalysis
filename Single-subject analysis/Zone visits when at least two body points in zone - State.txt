@@ -1,0 +1,59 @@
+// Zone visits when at least two body points are in the zone - State
+
+// This code produces a state variable that marks the time when at least two out of three body points are in a zone, no matter which points.
+
+// Edit the zone name as it is defined in the Arena Settings
+
+const g_strZone1 = "Zone 1";
+
+// Initialize the variables
+
+var g_nMissing = 0;
+var g_bInZone1 = false;
+
+function PointsInZone(strZone, ptCog, ptNose, ptTail)
+{
+    var n = 0;
+
+    n += IsInZone(strZone, ptCog)  ? 1 : 0;
+    n += IsInZone(strZone, ptNose) ? 1 : 0;
+    n += IsInZone(strZone, ptTail) ? 1 : 0;
+
+    return n >= 2;
+}
+
+
+function Start()
+{
+}
+
+
+function Stop()
+{
+}
+
+
+function Process()
+{
+   var ptCog  = GetCenter();
+   var ptNose = GetNose();
+   var ptTail = GetTail();
+
+   if (ptCog && ptNose && ptTail)
+   {
+      g_nMissing = 0;
+   
+      g_bInZone1 = PointsInZone(g_strZone1, ptCog, ptNose, ptTail);
+   }
+   else
+   {
+      ++g_nMissing;
+      
+      if (g_nMissing > 3 && g_bInZone1)
+      {
+          g_bInZone1 = false;
+      }
+   }
+
+   SetOutput(g_bInZone1);
+}
