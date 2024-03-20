@@ -1,0 +1,95 @@
+// Body Area - Running Average - Continuous
+
+// This code calculates the running average of body area
+// Default is 10 samples
+
+// Enter the value of g_nSamplesQueue for the length of the running average window (default 10)
+
+const   g_nSamplesQueue = 10;
+
+var x = 0;
+
+// This function creates an array that stores all the last g_nSamplesQueue for calculating the average
+
+function RunningAverageQueueMissing(nSamplesMax)
+{
+    this.m_nSamplesMax = nSamplesMax;
+    this.m_aValues     = [];
+    
+    this.Add = function(value) 
+    {
+        while (this.m_aValues.length >= this.m_nSamplesMax)
+        {
+          this.m_aValues.shift();
+        }
+
+        this.m_aValues.push(value);
+    };
+
+    this.Clear = function() 
+    {
+        this.m_aValues.length = 0;
+    };
+
+    this.GetAvg = function() 
+    {
+        var avg    = 0;
+        var nTotal = 0;
+
+        for (var n = 0; n != this.m_aValues.length; n++)
+        {
+            if (this.m_aValues[n] != null)
+            {
+               avg += this.m_aValues[n]; 
+               ++nTotal;
+            }
+        }
+
+        if (nTotal != 0)
+        {
+            avg /= nTotal;
+        }
+        else
+        {
+            avg = null;
+        }
+
+        return avg;
+    };
+}
+
+//This calls the Running average queue function and stores the values in the queue 
+var g_queue = new RunningAverageQueueMissing(g_nSamplesQueue);
+
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{  
+   var x = GetArea();    
+
+
+   if (x != null)   
+   {      
+   //Add the current value of body area to the queue
+
+    g_queue.Add(x);
+
+   //Calculate the new running average
+
+   var AreaAvg = g_queue.GetAvg();
+
+   SetOutput(AreaAvg);   
+
+   }   
+   else  
+   {      
+      SetOutputMissing();   
+   }
+}

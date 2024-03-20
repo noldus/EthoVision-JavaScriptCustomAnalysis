@@ -1,0 +1,96 @@
+// Heading relative to the vector from point 1 to point 2 - binned - State
+// This code calculates the angle of a vector from point 1 to point 2,
+// then calculates the animal's heading relative to that vector and creates eight bins 
+// depending on that value. Bins 0 and 4 indicate parallel movement, while bins 4 and 6 perpendicular movement
+// Add this code to a JavaScript State dependent variable and set the Number of Outputs to 8
+
+const g_pt1 = "Point 1";    // edit this name to match the point or the zone of interest
+const g_pt2 = "Point 2";    // edit this name to match the point or the zone of interest
+var   g_center_prev; 
+
+// Get values in degrees instead of radians
+function toDegrees(angle)
+{
+   return angle * (180 / Math.PI);
+}
+
+function Start()
+{
+}
+ 
+function Stop()
+{
+}
+ 
+function Process()
+{
+   var pt1 = GetPointPoi(g_pt1);
+   var pt2 = GetPointPoi(g_pt2);
+
+   var center_now = GetCenter();
+ 
+   var bOk1 = false;
+   var bOk2 = false;
+   var bOk3 = false;
+   var bOk4 = false;
+   var bOk5 = false;
+   var bOk6 = false;
+   var bOk7 = false;
+   var bOk8 = false;
+   
+   if (center_now)
+   {
+      if (g_center_prev)
+	  {
+         var ang = Heading(pt1,pt2); 
+         ang = toDegrees(Heading(g_center_prev,center_now) - ang);
+
+         if (ang >= 360)
+         {
+            ang = ang - 360;
+         }
+         if (ang < 0)
+         {
+            ang = ang + 360;
+         }
+         //ang will always be between 0 and 360
+		 
+         bOk1 = (ang > 337.5) || (ang <= 22.5);
+         bOk2 = (ang > 22.5) && (ang <= 67.5);
+         bOk3 = (ang > 67.5) && (ang <= 112.5);
+         bOk4 = (ang > 112.5) && (ang <= 157.5);
+         bOk5 = (ang > 157.5) && (ang <= 202.5);
+         bOk6 = (ang > 202.5) && (ang <= 247.5);
+         bOk7 = (ang > 247.5) && (ang <= 292.5);
+         bOk8 = (ang > 292.5) && (ang <= 337.5);
+
+         SetOutput(0, bOk1);
+         SetOutput(1, bOk2);
+         SetOutput(2, bOk3);
+         SetOutput(3, bOk4);		 
+         SetOutput(4, bOk5);		 
+         SetOutput(5, bOk6);		 
+         SetOutput(6, bOk7);		 
+         SetOutput(7, bOk8);		 
+		 
+         g_center_prev = center_now;
+	  }
+	  else
+	  {
+         g_center_prev = center_now;
+         SetOutputMissing(0);	  
+         SetOutputMissing(1);	  
+         SetOutputMissing(2);	  
+         SetOutputMissing(3);	  
+         SetOutputMissing(4);	  
+         SetOutputMissing(5);	  
+         SetOutputMissing(6);	  
+         SetOutputMissing(7);	  
+	  }
+   }
+   else
+   {
+      SetOutputMissing(0);
+   }
+
+}

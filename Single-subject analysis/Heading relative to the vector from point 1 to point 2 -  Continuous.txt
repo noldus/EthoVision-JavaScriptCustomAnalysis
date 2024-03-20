@@ -1,0 +1,64 @@
+// Heading relative to the vector from point 1 to point 2 - Continuous
+// This code calculates the angle of a vector from point 1 to point 2,
+// then calculates the animal's heading relative to that vector, in degrees (range 0-360).
+// In the Arena Settings, define two Point of interest that mark the linear path
+// Add this code to a JavaScript Continuous dependent variable and set the Number of Outputs to 1
+
+const g_pt1 = "Point 1";    // edit this name to match the point or the zone of interest
+const g_pt2 = "Point 2";    // edit this name to match the point or the zone of interest
+var   g_center_prev; 
+
+// Get values in degrees instead of radians
+function toDegrees(angle)
+{
+   return angle * (180 / Math.PI);
+}
+
+function Start()
+{
+}
+ 
+function Stop()
+{
+}
+ 
+function Process()
+{
+   var pt1 = GetPointPoi(g_pt1);
+   var pt2 = GetPointPoi(g_pt2);
+
+   var center_now = GetCenter();
+ 
+   if (center_now)
+   {
+       if (g_center_prev)
+	   {
+          var ang = Heading(pt1,pt2); 
+          ang = toDegrees(Heading(g_center_prev,center_now) - ang);
+
+          if (ang >= 360)
+          {
+             ang = ang - 360;
+          }
+
+          if (ang < 0)
+          {
+             ang = ang + 360;
+          }
+
+          SetOutput(ang);
+          g_center_prev = center_now;
+      }
+
+      else
+      {
+          g_center_prev = center_now;
+          SetOutputMissing();	  
+      }
+   }
+   else
+   {
+      SetOutputMissing();
+   }
+
+}

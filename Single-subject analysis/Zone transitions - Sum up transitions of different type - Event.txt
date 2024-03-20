@@ -1,0 +1,104 @@
+// Zone transitions - sum up transitions of different type - Event
+
+// This code outputs an event when one of the specific transitions occurs 
+// In this example there are foor zones in a T-maze: Start, Body, Arm1, Arm2
+// We want to sum up three type of zone transitions: Start -> Body, Body -> Arm1, Body->Arm 2
+// Default is based on zone entries of the center point; for nose point and tail-base point replace GetCenter with GetNose or GetTail
+// Results are summed up in one statistic (i.e. one column in your results table)
+
+// Edit the names of the zones as defined in the Arena Settings
+
+const g_Arm1 = 'A1';
+const g_Arm2 = 'A2';
+const g_Body = 'Body';
+const g_Start = 'Start';
+
+// Define the variables containing the name of the current zone and the previous zone
+
+var g_zone;
+var g_zonePrev;
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+   // Get the current data point
+
+   var pt   = GetCenter();
+   var Trans = 0;
+
+   // Assign the value of g_zone
+
+   if (pt)
+   {
+
+      if (IsInZone(g_Arm1, pt))
+      {
+         g_zone = g_Arm1;
+      }
+
+      if (IsInZone(g_Arm2, pt))
+      {
+         g_zone = g_Arm2;
+      }
+     
+      if (IsInZone(g_Body, pt))
+      {
+         g_zone = g_Body;
+      }
+
+      if (IsInZone(g_Start, pt))
+      {
+         g_zone = g_Start;
+      }
+
+      // Look for transitions
+
+      if (g_zonePrev)
+      {
+
+          if (g_zone == g_Body && g_zonePrev == g_Start)
+          {
+             // I found a transition Start > Body
+             Trans = 1;
+          }
+
+          if (g_zone == g_Arm1 && g_zonePrev == g_Body)
+          {
+             // I found a transition Body > Arm1
+             Trans = 1;
+          }
+
+          if (g_zone == g_Arm2 && g_zonePrev == g_Body)
+          {
+             // I found a transition Body > Arm2
+             Trans = 1;
+           }
+
+      }
+
+   }
+
+   // Update the name of the zone at the previous sample for the next loop
+
+   g_zonePrev = g_zone;
+
+
+   // Output the event if a transition was found at this sample
+
+   if (Trans == 1)
+   {
+      SetOutput(1);
+   }
+   else
+   { 
+      SetOutputMissing();
+   }
+
+}
