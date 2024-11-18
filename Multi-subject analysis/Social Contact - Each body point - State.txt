@@ -1,0 +1,114 @@
+// Social Contact - Each body point - State.js
+// This code detects social contact by the subject as actor
+// Social contact is defined as follows:
+// - The distance between the nose of the actor and a body point of the receiver is less than the threshold specified
+// - The actor is oriented toward the receiver: the angle formed by the center-nose vector of the actor
+// and the body point of the receiver is smaller than the threshold value specified
+// The variable is split in 3 outputs, one for each body point of the receiver
+
+// Choose JavaScript State in the Analysis profile
+
+// Settings
+// Select Number of Outputs = 3 in the JavaScript State settings dialog
+// 0 = contact with receiver's center point
+// 1 = contact with receiver's nose point
+// 2 = contact with receiver's tail-base point
+
+// Edit the values here below when needed (distances in mm)
+
+const g_actor       = "Subject 1"; // this is the role name in the Experiment Settings
+const g_receiver    = "Subject 2"; // this is the role name in the Experiment Settings
+const g_distContact = 30;   // 3 cm, distance below which it is considered contact no matter which orientation of center-nose vector
+const g_distMax     = 150;  // 15 cm, maximal distance to be considered contact
+const g_angle       = 45;   // 45 degrees, maximal angle between two vectors formed by body points
+
+function Clamp(x, xMin, xMax)
+{
+   return Math.min(Math.max(x, xMin), xMax);
+}
+
+function RadToDegree(x)
+{
+    return x * 180 / Math.PI;
+}
+
+function DistBetweenSubjects(ptActor, ptReceiver)
+{
+    return ptActor.Distance(ptReceiver);
+}
+
+function AngleFromNose(ptActorCog, ptActorNose, ptReceiver)
+{
+    // can be NaN
+
+    var ax = ptActorNose.x - ptActorCog.x;
+    var ay = ptActorNose.y - ptActorCog.y;
+
+    var bx = ptReceiver.x - ptActorNose.x;  // use actor nose
+    var by = ptReceiver.y - ptActorNose.y;
+
+    var prod    = ax * bx + ay * by;
+    var aLength = Math.sqrt(ax * ax + ay * ay);
+    var bLength = Math.sqrt(bx * bx + by * by);
+
+    var cosAlpha = 0;
+
+    if (aLength != 0 && bLength != 0)
+    {
+       cosAlpha = prod / (aLength * bLength);
+       cosAlpha = Clamp(cosAlpha, -1, 1);  // clamp between [-1, 1]
+    }
+    
+    return Math.acos(cosAlpha);
+}
+
+function SocialContact(ptActorCog, ptActorNose, ptReceiver)
+{
+    var angle    = AngleFromNose(ptActorCog, ptActorNose, ptReceiver);
+    var angleDeg = RadToDegree(angle);
+    var dist     = DistBetweenSubjects(ptActorNose, ptReceiver);
+    
+    return (dist < g_distContact) || (angleDeg < g_angle && dist < g_distMax);
+}
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+    var ptActorCog     = GetSubjectCenter(g_actor);
+    var ptActorNose    = GetSubjectNose(g_actor);
+    var ptReceiverCog  = GetSubjectCenter(g_receiver);
+    var ptReceiverNose = GetSubjectNose(g_receiver);
+    var ptReceiverTail = GetSubjectTail(g_receiver);
+
+    SetOutputMissing(0);
+    SetOutputMissing(1);
+    SetOutputMissing(2);
+    
+    if (ptActorCog && ptActorNose)
+    {
+        if (ptReceiverCog)
+        {
+            var bSC = SocialContact(ptActorCog, ptActorNose, ptReceiverCog);
+            SetOutput(0, bSC);
+        }
+
+        if (ptReceiverNose)
+        {
+            var bSC = SocialContact(ptActorCog, ptActorNose, ptReceiverNose);
+            SetOutput(1, bSC);
+        }
+
+        if (ptReceiverTail)
+        {
+            var bSC = SocialContact(ptActorCog, ptActorNose, ptReceiverTail);
+            SetOutput(2, bSC);
+        }
+    }
+}

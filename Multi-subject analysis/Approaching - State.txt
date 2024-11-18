@@ -1,0 +1,338 @@
+// Approaching - State.js
+// This code detects instances when Subject 1 (actor) approaches Subject 2 (receiver)
+// Approaching is defined as follows:
+// - The distance between the two subjects is within a specified range (g_distMin, g_distMax)
+// - The velocity of the receiver is lower than a specified value (g_velRecvMax)
+// - The running average distance between the two subject is reduced by g_delta
+// the code includes also functions to modify this strategy
+// (a) when the current distance between subjects is reduced or 
+// (b) when N out of 10 samples the distance is reduced 
+// The actor is oriented to the receiver by an angle smaller than a thresold (g_angle)
+// The variable is active when the conditions specified are met
+
+// Choose JavaScript State in the Analysis profile
+
+// Settings
+// Select Number of Outputs = 1 in the JavaScript State settings dialog
+
+// Edit the values here below when needed (distances in mm)
+// Optional: Create a copy of this variable and specify Subject 2 as g_actor and Subject 1 as g_receiver
+
+
+const g_actor           = "Subject 1";
+const g_receiver        = "Subject 2";
+const g_distMin         = 70;  // 7 cm
+const g_distMax         = 200;  // 20 cm
+const g_angle           = 35;   // 35 deg
+const g_velRecvMax      = 200;  // 20 cm/s
+const g_delta           = 2.5;  // 0.25 cm
+
+var g_tPrev             = -1;
+var g_ptActorCogPrev    = null;
+var g_ptReceiverCogPrev = null;
+var g_distPrev          = 0;
+var g_queue             = null;
+var g_queueDiff         = null;
+var g_queueVelRecv      = null;
+var g_objNOutOfM        = null;
+
+
+class UtilAverageQueue
+
+{
+    constructor(nSamplesMax)
+
+    {
+        this.m_nSamplesMax = nSamplesMax;
+        this.m_aValues     = [];
+    }
+    
+    Add(value) 
+    {
+        while (this.m_aValues.length >= this.m_nSamplesMax)
+        {
+           this.m_aValues.shift();
+        }
+
+        this.m_aValues.push(value);
+    }
+
+
+    GetCount() 
+    {
+        return this.m_aValues.length;
+    }
+
+    Clear() 
+    {
+        this.m_aValues.length = 0;
+    }
+
+    GetAvg() 
+    {
+        var avg    = 0;
+        var nTotal = 0;
+
+        for (var n = 0; n != this.m_aValues.length; n++)
+        {
+            if (this.m_aValues[n] != null)
+            {
+               avg += this.m_aValues[n]; 
+               ++nTotal;
+            }
+        }
+
+
+        if (nTotal != 0)
+        {
+            avg /= nTotal;
+        }
+        else
+        {
+            avg = null;
+        }
+
+        return avg;
+    }
+}
+
+class UtilNOutOfM
+{
+    constructor(M, N)
+
+    {
+        this.m_M        = M;
+        this.m_N        = N;
+        this.m_aValues  = [];
+    }
+    
+    Add(b) 
+    {
+        while (this.m_aValues.length >= this.m_M)
+        {
+           this.m_aValues.shift();
+        }
+        this.m_aValues.push(b);
+    }
+
+
+    Clear() 
+    {
+        this.m_aValues.length = 0;
+    }
+
+    IsOk() 
+    {
+        var bOk = false;
+        var N = 0;
+
+        if (this.m_aValues.length == this.m_M)
+        {
+            for (var n = 0; n != this.m_aValues.length; n++)
+            {
+                if (this.m_aValues[n])
+                {
+                    ++N;
+                }
+            }
+
+
+
+            if (N >= this.m_N)
+            {
+                bOk = true;
+            }
+        }
+
+        return bOk;
+    }
+}
+
+function RadToDegree(x)
+
+{
+    return x * 180 / Math.PI;
+}
+
+
+function Vel(ptPrev, pt, tPrev, t)
+
+{
+    var dm = pt.Distance(ptPrev);
+    var dt = t - tPrev;
+    return dm / dt;
+}
+
+
+function DistBetweenSubjects(ptActor, ptReceiver)
+
+{
+    return ptActor.Distance(ptReceiver);
+}
+
+
+function Angle(ptActorCog, ptActorNose, ptReceiverCog)
+
+{
+    var ax = ptActorNose.x - ptActorCog.x;
+    var ay = ptActorNose.y - ptActorCog.y;
+
+    var bx = ptReceiverCog.x - ptActorCog.x;
+    var by = ptReceiverCog.y - ptActorCog.y;
+
+    var prod    = ax * bx + ay * by;
+
+    var aLength = Math.sqrt(ax * ax + ay * ay);
+    var bLength = Math.sqrt(bx * bx + by * by);
+
+    var cosAlpha = prod / (aLength * bLength);
+
+    return Math.acos(cosAlpha);
+
+}
+
+
+
+function GetDistanceUseAvg(distPrev, distCurr)
+
+{
+    g_queue.Add(distCurr);
+    return g_queue.GetAvg();    
+}
+
+
+
+function CheckDistanceUseAvg(distPrev, distAvg)
+
+{
+    // distance should become smaller so distPrev > distAvg
+    var bDist = (distAvg > g_distMin && distAvg < g_distMax && (distPrev - distAvg > g_delta));
+    return bDist;
+
+}
+
+
+function CheckDistanceUseDiff(distPrev, distCurr)
+{
+    g_queueDiff.Add(distCurr - distPrev);
+
+    var diff   = g_queueDiff.GetAvg(); 
+    var bDist  = (distCurr > g_distMin && distCurr < g_distMax && diff < -g_delta);
+
+    return bDist;
+}
+
+
+
+function CheckDistanceUseNOutOfM(distPrev, distCurr)
+
+{
+    g_objNOutOfM.Add(distCurr < distPrev ?  true : false);
+    var bDist  = (distCurr > g_distMin && distCurr < g_distMax && g_objNOutOfM.IsOk());
+
+    return bDist;
+}
+
+
+
+function CheckVelocityRecvMax(velRecv)
+
+{
+    g_queueVelRecv.Add(velRecv);
+
+    var vel = g_queueVelRecv.GetAvg();    
+
+    var bVel  = (vel < g_velRecvMax);
+
+    return bVel;
+}
+
+
+
+function Start()
+
+{
+    g_queue        = new UtilAverageQueue(5);
+
+    g_queueDiff    = new UtilAverageQueue(5);
+
+    g_queueVelRecv = new UtilAverageQueue(5);
+
+    g_objNOutOfM   = new UtilNOutOfM(10, 7);
+}
+
+
+
+function Stop()
+
+{
+
+}
+
+
+
+function Process()
+
+{
+    var t             = GetSampleTime(); 
+    var ptActorCog    = GetSubjectCenter(g_actor);
+    var ptActorNose   = GetSubjectNose(g_actor);
+    var ptReceiverCog = GetSubjectCenter(g_receiver);
+
+    SetOutputMissing(0);
+    SetOutputMissing(1);
+    SetOutputMissing(2);
+
+    if (g_tPrev != -1 && g_ptActorCogPrev && g_ptReceiverCogPrev && ptActorCog && ptReceiverCog)
+
+    {
+        var distCurr    = DistBetweenSubjects(ptActorCog, ptReceiverCog);
+        var distAvg     = GetDistanceUseAvg(g_distPrev, distCurr);
+        var velActor    = Vel(g_ptActorCogPrev, ptActorCog, g_tPrev, t);
+        var velReceiver = Vel(g_ptReceiverCogPrev, ptReceiverCog, g_tPrev, t);
+    
+        if (ptActorNose) 
+
+        {
+            var angle       = Angle(ptActorCog, ptActorNose, ptReceiverCog);
+            var angleDeg    = RadToDegree(angle);
+
+            var bVelRecv    = CheckVelocityRecvMax(velReceiver);
+
+            var bVel        = velActor > velReceiver;
+
+            //var bVel        = true;
+
+            var bAngle      = angleDeg < g_angle;
+
+            var bDistAvg    = CheckDistanceUseAvg(g_distPrev, distAvg);
+
+            // additional strategies which you can use to assess approach
+
+            // var bDistDiff   = CheckDistanceUseDiff(g_distPrev, distCurr);
+
+            // var bDistN      = CheckDistanceUseNOutOfM(g_distPrev, distCurr);
+
+        
+
+            var bApproach0 = bVelRecv && bVel && bAngle;
+
+            SetOutput(bApproach0 && bDistAvg); // replace bDistAvg with other strategy
+
+        }
+
+
+
+        g_distPrev = distAvg;
+
+    }
+
+
+
+    g_tPrev             = t;
+
+    g_ptActorCogPrev    = ptActorCog;
+
+    g_ptReceiverCogPrev = ptReceiverCog;
+
+}

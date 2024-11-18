@@ -1,0 +1,220 @@
+// Following - State.js
+// This code detects following behavior by Subject 1 considered as actor
+// Following is defined as follows:
+// - The distance between the two subjects is between a specified minimum and maximum value
+// - The velocity of the actor and receiver is between a specified minimum and maximum value
+// - The actor is oriented toward the receiver: the angle formed by the center-nose vector of the actor
+// and the center-nose vector of the receiver is smaller than the threshold value specified (body orientation)
+// Also the angle between the center-nose vector of the actor and the segment formed by the nose of the actor
+// and the center of the receiver must be smaller than the threshold value (following)
+// The variable is active when the actor follows the receiver
+
+// Choose JavaScript State in the Analysis profile
+
+// Settings
+// Select Number of Outputs = 1 in the JavaScript State settings dialog
+
+// Edit the values here below when needed (distances in mm)
+// Optional: Create a copy of this variable and specify Subject 2 as g_actor and Subject 1 as g_receiver
+
+const g_actor           = "Subject 1";
+const g_receiver        = "Subject 2";
+const g_distMin         = 0;    // 0 cm
+const g_distMax         = 150;  // 15 cm
+const g_angle           = 45;   // 45 deg
+const g_velMin          = 50;   // 5 cm/s
+const g_velMax          = 500;  // 50 cm/s
+
+var g_tPrev             = -1;
+var g_ptActorCogPrev    = null;
+var g_ptReceiverCogPrev = null;
+
+var g_queue             = null;
+var g_queueVelActor     = null;
+var g_queueVelRecv      = null;
+
+
+class UtilAverageQueue
+{
+    constructor(nSamplesMax)
+    {
+        this.m_nSamplesMax = nSamplesMax;
+        this.m_aValues     = [];
+    }
+    
+    Add(value) 
+    {
+        while (this.m_aValues.length >= this.m_nSamplesMax)
+        {
+           this.m_aValues.shift();
+        }
+
+        this.m_aValues.push(value);
+    }
+
+    GetSize() 
+    {
+        return this.m_aValues.length;
+    }
+
+    Clear() 
+    {
+        this.m_aValues.length = 0;
+    }
+
+    GetAvg() 
+    {
+        var avg    = 0;
+        var nTotal = 0;
+
+        for (var n = 0; n != this.m_aValues.length; n++)
+        {
+            if (this.m_aValues[n] != null)
+            {
+               avg += this.m_aValues[n]; 
+               ++nTotal;
+            }
+        }
+
+        if (nTotal != 0)
+        {
+            avg /= nTotal;
+        }
+        else
+        {
+            avg = null;
+        }
+
+        return avg;
+    }
+}
+
+function RadToDegree(x)
+{
+    return x * 180 / Math.PI;
+}
+
+function Vel(ptPrev, pt, tPrev, t)
+{
+    var dm = pt.Distance(ptPrev);
+    var dt = t - tPrev;
+
+    return dm / dt;
+}
+
+function DistBetweenSubjects(ptActor, ptReceiver)
+{
+    return ptActor.Distance(ptReceiver);
+}
+
+function Angle(ptA1, ptA2, ptB1, ptB2)
+{
+    var ax = ptA2.x - ptA1.x;
+    var ay = ptA2.y - ptA1.y;
+
+    var bx = ptB2.x - ptB1.x;
+    var by = ptB2.y - ptB1.y;
+
+    var prod    = ax * bx + ay * by;
+    var aLength = Math.sqrt(ax * ax + ay * ay);
+    var bLength = Math.sqrt(bx * bx + by * by);
+
+    var cosAlpha = 0;
+
+    if (aLength != 0 && bLength != 0)
+    {
+       cosAlpha = prod / (aLength * bLength);
+       cosAlpha = Math.max(-1, Math.min(cosAlpha, 1));  // clamp between [-1, 1]
+    }
+    
+    return Math.acos(cosAlpha);
+}
+
+function CheckAngles(ptActorCog, ptActorNose, ptReceiverCog, ptReceiverNose)
+{
+    //// angle between actor cog - nose and actor cog - receiver cog
+    // angle between actor cog - nose and actor nose - receiver cog
+    // angle between actor cog - nose and receiver cog - nose
+    
+    //var angle1    = Angle(ptActorCog, ptActorNose, ptActorCog, ptReceiverCog);
+    var angle1    = Angle(ptActorCog, ptActorNose, ptActorNose, ptReceiverCog);
+    var angle2    = Angle(ptActorCog, ptActorNose, ptReceiverCog, ptReceiverNose);
+    var angleDeg1 = RadToDegree(angle1);
+    var angleDeg2 = RadToDegree(angle2);
+
+    return angleDeg1 < g_angle && angleDeg2 < g_angle;
+}
+
+function CheckDistanceUseAvg(dist)
+{
+    g_queue.Add(dist);
+
+    var distAvg = g_queue.GetAvg();
+
+    var bDist = (distAvg > g_distMin && distAvg < g_distMax);
+
+    return bDist;
+}
+
+function CheckVelocityActor(vel)
+{
+    g_queueVelActor.Add(vel);
+
+    var velAvg = g_queueVelActor.GetAvg();    
+
+    return velAvg >= g_velMin && velAvg < g_velMax;
+}
+
+function CheckVelocityRecv(vel)
+{
+    g_queueVelRecv.Add(vel);
+
+    var velAvg = g_queueVelRecv.GetAvg();    
+
+    return velAvg >= g_velMin && velAvg < g_velMax;
+}
+
+function Start()
+{
+    g_queue         = new UtilAverageQueue(5);
+    g_queueVelActor = new UtilAverageQueue(5);
+    g_queueVelRecv  = new UtilAverageQueue(5);
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+    var t              = GetSampleTime(); 
+    var ptActorCog     = GetSubjectCenter(g_actor);
+    var ptActorNose    = GetSubjectNose(g_actor);
+    var ptReceiverCog  = GetSubjectCenter(g_receiver);
+    var ptReceiverNose = GetSubjectNose(g_receiver);
+    var ptReceiverTail = GetSubjectTail(g_receiver);
+
+    SetOutputMissing();
+
+    if (g_tPrev != -1 && g_ptActorCogPrev && g_ptReceiverCogPrev && ptActorCog && ptReceiverCog)
+    {
+        if (ptActorNose && ptReceiverNose && ptReceiverTail) 
+        {
+            var distCurr    = DistBetweenSubjects(ptActorNose, ptReceiverTail);
+            var velActor    = Vel(g_ptActorCogPrev, ptActorCog, g_tPrev, t);
+            var velReceiver = Vel(g_ptReceiverCogPrev, ptReceiverCog, g_tPrev, t);
+               
+            var bVelActor   = CheckVelocityActor(velActor);
+            var bVelRecv    = CheckVelocityRecv(velReceiver);
+            var bAngle      = CheckAngles(ptActorCog, ptActorNose, ptReceiverCog, ptReceiverNose);
+            var bDistAvg    = CheckDistanceUseAvg(distCurr);
+            var bFollowing  = bVelActor && bVelRecv && bAngle && bDistAvg;
+
+            SetOutput(bFollowing);
+        }
+    }
+
+    g_tPrev             = t;
+    g_ptActorCogPrev    = ptActorCog;
+    g_ptReceiverCogPrev = ptReceiverCog;
+}

@@ -1,0 +1,241 @@
+// Leaving - State.js
+// This code detects instances when Subject 1 (actor) leaves Subject 2 (receiver)
+// Leaving is is defined as follows:
+// - The distance between the two subjects is within a specified range (g_distMin, g_distMax)
+// - The velocity of the actor and receiver is within a specified range (g_VelMin, g_velMax; for the actor a higher threshold is introduced, g_velMinAct)
+// - The distance between the two subject increases by g_deltaDiff
+// - The actor is oriented away from the receiver: the angle formed by the center-nose vector of the actor
+// and the center point of the receiver is smaller than the threshold value specified (g_angle)
+// The variable is active when the conditions specified are met
+
+// Choose JavaScript State in the Analysis profile
+
+// Settings
+// Select Number of Outputs = 1 in the JavaScript State settings dialog
+
+// Edit the values here below when needed (distances in mm)
+// Optional: Create a copy of this variable and specify Subject 2 as g_actor and Subject 1 as g_receiver
+
+const g_actor           = "Subject 1";
+const g_receiver        = "Subject 2";
+const g_distMin         = 0;    // 0 cm
+const g_distMax         = 200;  // 20 cm
+const g_angle           = 45;   // 45 deg
+const g_velMin          = 5;   // 0.5 cm/s
+const g_velMinAct       = 50;  // 5 cm/s
+const g_velMax          = 500;  // 50 cm/s
+const g_deltaDiff       = 2;  // 0.2 cm
+
+var g_tPrev             = -1;
+var g_ptActorCogPrev    = null;
+var g_ptReceiverCogPrev = null;
+
+var g_queue             = null;
+var g_queueVelActor     = null;
+var g_queueVelRecv      = null;
+
+
+class UtilAverageQueue
+{
+    constructor(nSamplesMax)
+    {
+        this.m_nSamplesMax = nSamplesMax;
+        this.m_aValues     = [];
+    }
+    
+    Add(value) 
+    {
+        while (this.m_aValues.length >= this.m_nSamplesMax)
+        {
+           this.m_aValues.shift();
+        }
+
+        this.m_aValues.push(value);
+    }
+
+    GetSize() 
+    {
+        return this.m_aValues.length;
+    }
+
+    Clear() 
+    {
+        this.m_aValues.length = 0;
+    }
+
+    GetAvg() 
+    {
+        var avg    = 0;
+        var nTotal = 0;
+
+        for (var n = 0; n != this.m_aValues.length; n++)
+        {
+            if (this.m_aValues[n] != null)
+            {
+               avg += this.m_aValues[n]; 
+               ++nTotal;
+            }
+        }
+
+        if (nTotal != 0)
+        {
+            avg /= nTotal;
+        }
+        else
+        {
+            avg = null;
+        }
+
+        return avg;
+    }
+}
+
+function Clamp(x, xMin, xMax)
+{
+   return Math.min(Math.max(x, xMin), xMax);
+}
+
+function RadToDegree(x)
+{
+    return x * 180 / Math.PI;
+}
+
+function Vel(ptPrev, pt, tPrev, t)
+{
+    var dm = pt.Distance(ptPrev);
+    var dt = t - tPrev;
+
+    return dm / dt;
+}
+
+function DistBetweenSubjects(ptActor, ptReceiver)
+{
+    return ptActor.Distance(ptReceiver);
+}
+
+function Angle(ptReceiverCog, ptActorCog, ptActorNose)
+{
+    var ax = ptActorCog.x - ptReceiverCog.x;
+    var ay = ptActorCog.y - ptReceiverCog.y;
+
+    var bx = ptActorNose.x - ptActorCog.x;
+    var by = ptActorNose.y - ptActorCog.y;
+
+    var prod    = ax * bx + ay * by;
+    var aLength = Math.sqrt(ax * ax + ay * ay);
+    var bLength = Math.sqrt(bx * bx + by * by);
+
+    var cosAlpha = 0;
+
+    if (aLength != 0 && bLength != 0)
+    {
+       cosAlpha = prod / (aLength * bLength);
+       cosAlpha = Clamp(cosAlpha, -1, 1);  // clamp between [-1, 1]
+    }
+    
+    return Math.acos(cosAlpha);
+}
+
+function CheckDistanceDiffUseAvg(dist)
+{
+    var bDist = false;
+
+    var distAvgPrev;
+
+    if (g_queue.GetSize() > 0)
+    {
+        distAvgPrev = g_queue.GetAvg();
+    }
+    
+    g_queue.Add(dist);
+
+    if (distAvgPrev)
+    {
+        var distAvg = g_queue.GetAvg();
+
+        bDist = distAvg > g_distMin && distAvg < g_distMax && (distAvg - distAvgPrev) > g_deltaDiff;
+    }
+
+    return bDist;
+}
+
+function CheckVelocityActor(vel)
+{
+    g_queueVelActor.Add(vel);
+
+    var velAvg = g_queueVelActor.GetAvg();    
+
+    return velAvg >= g_velMinAct && velAvg < g_velMax;
+}
+
+function CheckVelocityRecv(vel)
+{
+    g_queueVelRecv.Add(vel);
+
+    var velAvg = g_queueVelRecv.GetAvg();    
+
+    return velAvg >= g_velMin && velAvg < g_velMax;
+}
+
+function CheckVelocityActRecv()
+{
+    var velActAvg  = g_queueVelActor.GetAvg();
+    var velRecvAvg = g_queueVelRecv.GetAvg();
+
+    return velActAvg > velRecvAvg;
+}
+
+function CheckAngle(angleRad)
+{
+    var angleDeg = RadToDegree(angleRad);
+    
+    return angleDeg < g_angle;
+}
+
+function Start()
+{
+    g_queue         = new UtilAverageQueue(5);
+    g_queueVelActor = new UtilAverageQueue(5);
+    g_queueVelRecv  = new UtilAverageQueue(5);
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+    var t              = GetSampleTime(); 
+    var ptActorCog     = GetSubjectCenter(g_actor);
+    var ptActorNose    = GetSubjectNose(g_actor);
+    var ptActorTail    = GetSubjectTail(g_actor);
+    var ptReceiverCog  = GetSubjectCenter(g_receiver);
+    var ptReceiverNose = GetSubjectNose(g_receiver);
+    var ptReceiverTail = GetSubjectTail(g_receiver);
+
+    SetOutputMissing();
+
+    if (g_tPrev != -1 && g_ptActorCogPrev && g_ptReceiverCogPrev && ptActorCog && ptReceiverCog)
+    {
+        if (ptActorNose && ptActorTail && ptReceiverNose && ptReceiverTail) 
+        {
+            var distCurr     = DistBetweenSubjects(ptActorTail, ptReceiverCog);
+            var velActor     = Vel(g_ptActorCogPrev, ptActorCog, g_tPrev, t);
+            var velReceiver  = Vel(g_ptReceiverCogPrev, ptReceiverCog, g_tPrev, t);
+            var angle        = Angle(ptReceiverCog, ptActorCog, ptActorNose);
+               
+            var bVelActor    = CheckVelocityActor(velActor);
+            var bVelRecv     = CheckVelocityRecv(velReceiver);
+            var bVelActRecv  = CheckVelocityActRecv();
+            var bDistDiffAvg = CheckDistanceDiffUseAvg(distCurr);
+            var bAngle       = CheckAngle(angle);
+            var bLeaving     = bVelActor && bVelRecv && bVelActRecv && bDistDiffAvg && bAngle;
+
+            SetOutput(bLeaving);
+        }
+    }
+
+    g_tPrev             = t;
+    g_ptActorCogPrev    = ptActorCog;
+    g_ptReceiverCogPrev = ptReceiverCog;
+}
