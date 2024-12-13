@@ -1,0 +1,58 @@
+// Turn angle - Based on head direction - Continuous
+
+// This code returns the change in Head direction relative to the previous sample in degrees
+
+// Initialize the variables
+
+var hd = null;
+var hd_prev = null;
+var hd_diff = 0;
+var ta_deg = 0;
+
+// This function converts angle values from Radians to Degrees
+
+function toDegrees(angle) 
+{
+  return angle * (180 / Math.PI);
+}
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{  
+   // Get the head direction in radians
+
+   var hd = GetViewDirection();
+
+   if (hd != null && hd_prev != null)   
+   {      
+      hd_diff = hd - hd_prev;
+      ta_deg = toDegrees(hd_diff);
+
+      if (ta_deg < -180)
+      {
+         ta_deg = ta_deg + 360;
+      } 
+      else if (ta_deg > 180)
+      { 
+         ta_deg = -(360 - ta_deg);
+      }
+      
+
+      SetOutput(ta_deg);   
+
+   }   
+   else  
+   {      
+      SetOutputMissing();   
+   }
+
+   hd_prev = hd;
+
+}

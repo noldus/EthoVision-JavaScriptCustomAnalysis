@@ -1,0 +1,164 @@
+// Turn angle - Based on center point - Running Total - Continuous
+
+// This code calculates the running cumulative Turn angle based on the center point
+
+// Enter the value of g_nSamplesQueue for the length of the cumulative window (default 10)
+
+const   g_nSamplesQueue = 15;
+
+// Enter the distance filter in mm
+// If a point moves less than this distance from the previous point, then the turn angle is not calculated
+
+const g_Distance = 5;
+
+// Variables for previous points
+var g_ptPrev1;
+var g_ptPrev2;
+
+
+// This function converts radians to degrees
+
+function toDegrees(angle)
+{
+
+ return angle * (180 / Math.PI);
+
+}
+
+// This function calculates the distance between two points
+
+function Dm(ptPrev, pt)
+{
+    var x = pt.x - ptPrev.x;
+    var y = pt.y - ptPrev.y;
+
+    return Math.sqrt(x * x + y * y);
+}
+
+
+
+// This function creates an array that stores all the last g_nSamplesQueue for calculating the running total
+
+function RunningTotalQueueMissing(nSamplesMax)
+{
+    this.m_nSamplesMax = nSamplesMax;
+    this.m_aValues     = [];
+    
+    this.Add = function(value) 
+    {
+        while (this.m_aValues.length >= this.m_nSamplesMax)
+        {
+          this.m_aValues.shift();
+        }
+
+        this.m_aValues.push(value);
+    };
+
+    this.Clear = function() 
+    {
+        this.m_aValues.length = 0;
+    };
+
+    this.GetSum = function() 
+    {
+        var sum    = 0;
+        var nTotal = 0;
+
+        for (var n = 0; n != this.m_aValues.length; n++)
+        {
+            if (this.m_aValues[n] != null)
+            {
+               sum += this.m_aValues[n]; 
+               ++nTotal;
+            }
+        }
+
+        if (nTotal != 0)
+        {
+            // sum is valid
+        }
+        else
+        {
+            sum = null;
+        }
+
+        return sum;
+    };
+}
+
+//This calls the Running total queue function and stores the values in the queue 
+var g_queue = new RunningTotalQueueMissing(g_nSamplesQueue);
+
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+   //get the current datapoint
+  
+   var pt   = GetCenter();
+
+   //Calculate the turn angle if pt, ptPrev1 and ptPrev2 are known
+
+   if (pt)
+   {
+       if (g_ptPrev1)
+       { 
+          if (g_ptPrev2)
+          {
+
+             if (Dm(g_ptPrev1, pt) > g_Distance)
+             { 
+                if (Dm(g_ptPrev2, g_ptPrev1) > g_Distance)
+                {
+   
+                   var ta = TurnAngle(g_ptPrev2, g_ptPrev1, pt);
+   
+                   ta_abs = Math.abs(ta);
+   
+                   var turn = toDegrees(ta_abs);
+   
+                }
+
+             }
+ 
+          }
+
+       }
+
+    }
+
+ 
+
+   //Add the current value of turn to the queue
+
+    g_queue.Add(turn);
+
+   //Calculate the new running total
+
+   var TurnTot = g_queue.GetSum();
+
+    
+   if (TurnTot)
+   {
+        SetOutput(TurnTot);
+   }
+    else
+   { 
+        SetOutputMissing();
+   }
+
+   // Update the previous points before the next loop
+
+   g_ptPrev2 = g_ptPrev1;
+   g_ptPrev1 = pt;
+
+
+
+}

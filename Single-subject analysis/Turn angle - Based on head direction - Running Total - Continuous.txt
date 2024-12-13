@@ -1,0 +1,132 @@
+// Turn angle - Based on head direction - Running Total - Continuous
+
+// This code calculates the running cumulative Turn angle based on the Head direction
+
+// Enter the value of g_nSamplesQueue for the length of the cumulative window (default 10)
+
+const   g_nSamplesQueue = 10;
+
+// Variables for previous point
+var g_tPrev;
+var g_ptPrev;
+
+function toDegrees(angle)
+
+{
+
+ return angle * (180 / Math.PI);
+
+}
+
+
+// This function creates an array that stores all the last g_nSamplesQueue for calculating the average
+
+function RunningTotalQueueMissing(nSamplesMax)
+{
+    this.m_nSamplesMax = nSamplesMax;
+    this.m_aValues     = [];
+    
+    this.Add = function(value) 
+    {
+        while (this.m_aValues.length >= this.m_nSamplesMax)
+        {
+          this.m_aValues.shift();
+        }
+
+        this.m_aValues.push(value);
+    };
+
+    this.Clear = function() 
+    {
+        this.m_aValues.length = 0;
+    };
+
+    this.GetSum = function() 
+    {
+        var sum    = 0;
+        var nTotal = 0;
+
+        for (var n = 0; n != this.m_aValues.length; n++)
+        {
+            if (this.m_aValues[n] != null)
+            {
+               sum += this.m_aValues[n]; 
+               ++nTotal;
+            }
+        }
+
+        if (nTotal != 0)
+        {
+            // sum is valid
+        }
+        else
+        {
+            sum = null;
+        }
+
+        return sum;
+    };
+}
+
+//This calls the Running total queue function and stores the values in the queue 
+var g_queue = new RunningTotalQueueMissing(g_nSamplesQueue);
+
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+   //get the current datapoint and time
+   var t    = GetSampleTime();
+   var pt   = GetViewDirection();
+
+   //Calculate the distance moved if the pt and the previous point are known
+   if (pt)
+   {
+       if (g_ptPrev)
+       {
+           var turn = pt - g_ptPrev;
+           var turn = toDegrees(turn);
+
+           // correction around +/- 180
+             if (turn < -180)
+           {
+              turn = turn + 360;
+           } 
+           else if (turn > 180)
+           { 
+              turn = -(360 - turn);
+           }
+
+       }
+    }
+
+   //Update the previous point before the next cycle
+
+   g_ptPrev = pt;
+
+
+   //Add the current value of distance to the queue
+
+    g_queue.Add(turn);
+
+   //Calculate the new running total
+
+   var TurnTot = g_queue.GetSum();
+
+    
+   if (TurnTot)
+   {
+        SetOutput(TurnTot);
+   }
+    else
+   { 
+        SetOutputMissing();
+   }
+}
