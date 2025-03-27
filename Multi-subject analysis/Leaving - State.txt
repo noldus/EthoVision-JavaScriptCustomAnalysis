@@ -21,8 +21,8 @@ const g_receiver        = "Subject 2";
 const g_distMin         = 0;    // 0 cm
 const g_distMax         = 200;  // 20 cm
 const g_angle           = 45;   // 45 deg
-const g_velMin          = 5;   // 0.5 cm/s
 const g_velMinAct       = 50;  // 5 cm/s
+const g_velMinRecv      = 5;   // 0.5 cm/s
 const g_velMax          = 500;  // 50 cm/s
 const g_deltaDiff       = 2;  // 0.2 cm
 
@@ -174,7 +174,7 @@ function CheckVelocityRecv(vel)
 
     var velAvg = g_queueVelRecv.GetAvg();    
 
-    return velAvg >= g_velMin && velAvg < g_velMax;
+    return velAvg >= g_velMinRecv && velAvg < g_velMax;
 }
 
 function CheckVelocityActRecv()
@@ -210,24 +210,22 @@ function Process()
     var ptActorNose    = GetSubjectNose(g_actor);
     var ptActorTail    = GetSubjectTail(g_actor);
     var ptReceiverCog  = GetSubjectCenter(g_receiver);
-    var ptReceiverNose = GetSubjectNose(g_receiver);
-    var ptReceiverTail = GetSubjectTail(g_receiver);
 
     SetOutputMissing();
 
     if (g_tPrev != -1 && g_ptActorCogPrev && g_ptReceiverCogPrev && ptActorCog && ptReceiverCog)
     {
-        if (ptActorNose && ptActorTail && ptReceiverNose && ptReceiverTail) 
+        if (ptActorNose && ptActorTail) 
         {
             var distCurr     = DistBetweenSubjects(ptActorTail, ptReceiverCog);
             var velActor     = Vel(g_ptActorCogPrev, ptActorCog, g_tPrev, t);
             var velReceiver  = Vel(g_ptReceiverCogPrev, ptReceiverCog, g_tPrev, t);
             var angle        = Angle(ptReceiverCog, ptActorCog, ptActorNose);
                
+            var bDistDiffAvg = CheckDistanceDiffUseAvg(distCurr);
             var bVelActor    = CheckVelocityActor(velActor);
             var bVelRecv     = CheckVelocityRecv(velReceiver);
             var bVelActRecv  = CheckVelocityActRecv();
-            var bDistDiffAvg = CheckDistanceDiffUseAvg(distCurr);
             var bAngle       = CheckAngle(angle);
             var bLeaving     = bVelActor && bVelRecv && bVelActRecv && bDistDiffAvg && bAngle;
 
