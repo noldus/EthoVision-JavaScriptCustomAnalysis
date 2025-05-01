@@ -1,0 +1,80 @@
+// Aggregating behavior - State
+
+// State variable that is active when all the subjects are within a certain distance from each other.
+// Assumption: At least two subjects; distance is based on center point
+// Unit is mm
+
+// Edit the names of the subjects as they are defined in the Experiment Settings in your experiment
+// Delete the names of subjects not used e.g. Subjects 4 to 5
+// Add more subject names if necessary e.g. "Subject 6"
+
+const g_aSubjects = ["Subject 1", "Subject 2", "Subject 3", "Subject 4", "Subject 5"];
+
+// Enter the maximum distance in mm
+
+const g_maxDist = 100;
+
+function Start()
+{
+}
+
+function Stop()
+{
+}
+
+function Process()
+{
+   var max_dist; 
+
+   var i;
+   for (i = 0; i < g_aSubjects.length; ++i)
+   {
+      var ptSubA = GetSubjectCenter(g_aSubjects[i]);
+
+      if (ptSubA != null)
+      {
+         var xA = ptSubA.x;
+         var yA = ptSubA.y;
+
+         var j;
+         for (j = i+1; j < g_aSubjects.length; ++j)
+         {
+            var ptSubB = GetSubjectCenter(g_aSubjects[j]);
+
+            if (ptSubB != null)
+            {
+               var xB = ptSubB.x;
+               var yB = ptSubB.y;
+
+               if (xA !== xB && yA !== yB)
+               {
+                  var Dist = ptSubA.Distance(ptSubB);
+
+                  // Find the maximum, the first value encountered is set as the maximum with the null comparison 
+
+                  if (max_dist == null)
+                  {
+                     max_dist = Dist;
+                  }
+                  else if (Dist > max_dist) 
+                  {
+                     max_dist = Dist;
+                  }
+               }
+            }
+         }
+      }
+   } 
+
+   SetOutputMissing();
+
+   // Returns the value of true if the overall maximum distance is shorter than threshold
+
+   if (max_dist != null)
+   {
+      if (max_dist < g_maxDist)
+      {
+         SetOutput(true);
+      }
+   }
+}
