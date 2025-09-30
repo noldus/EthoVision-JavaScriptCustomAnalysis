@@ -19,8 +19,8 @@
 // Optional: Create a copy of this variable and specify Subject 2 as g_actor and Subject 1 as g_receiver
 
 
-const g_actor           = "Subject 1";
-const g_receiver        = "Subject 2";
+const g_actor           = "Subject 2";
+const g_receiver        = "Subject 1";
 const g_distMin         = 70;  // 7 cm
 const g_distMax         = 200;  // 20 cm
 const g_angle           = 35;   // 35 deg
@@ -38,16 +38,14 @@ var g_objNOutOfM        = null;
 
 
 class UtilAverageQueue
-
 {
     constructor(nSamplesMax)
-
     {
         this.m_nSamplesMax = nSamplesMax;
         this.m_aValues     = [];
     }
     
-    Add(value) 
+    Add(value)
     {
         while (this.m_aValues.length >= this.m_nSamplesMax)
         {
@@ -56,7 +54,6 @@ class UtilAverageQueue
 
         this.m_aValues.push(value);
     }
-
 
     GetCount() 
     {
@@ -82,7 +79,6 @@ class UtilAverageQueue
             }
         }
 
-
         if (nTotal != 0)
         {
             avg /= nTotal;
@@ -96,83 +92,24 @@ class UtilAverageQueue
     }
 }
 
-class UtilNOutOfM
-{
-    constructor(M, N)
-
-    {
-        this.m_M        = M;
-        this.m_N        = N;
-        this.m_aValues  = [];
-    }
-    
-    Add(b) 
-    {
-        while (this.m_aValues.length >= this.m_M)
-        {
-           this.m_aValues.shift();
-        }
-        this.m_aValues.push(b);
-    }
-
-
-    Clear() 
-    {
-        this.m_aValues.length = 0;
-    }
-
-    IsOk() 
-    {
-        var bOk = false;
-        var N = 0;
-
-        if (this.m_aValues.length == this.m_M)
-        {
-            for (var n = 0; n != this.m_aValues.length; n++)
-            {
-                if (this.m_aValues[n])
-                {
-                    ++N;
-                }
-            }
-
-
-
-            if (N >= this.m_N)
-            {
-                bOk = true;
-            }
-        }
-
-        return bOk;
-    }
-}
-
 function RadToDegree(x)
-
 {
     return x * 180 / Math.PI;
 }
 
-
 function Vel(ptPrev, pt, tPrev, t)
-
 {
     var dm = pt.Distance(ptPrev);
     var dt = t - tPrev;
     return dm / dt;
 }
 
-
 function DistBetweenSubjects(ptActor, ptReceiver)
-
 {
     return ptActor.Distance(ptReceiver);
 }
 
-
 function Angle(ptActorCog, ptActorNose, ptReceiverCog)
-
 {
     var ax = ptActorNose.x - ptActorCog.x;
     var ay = ptActorNose.y - ptActorCog.y;
@@ -188,29 +125,20 @@ function Angle(ptActorCog, ptActorNose, ptReceiverCog)
     var cosAlpha = prod / (aLength * bLength);
 
     return Math.acos(cosAlpha);
-
 }
 
-
-
-function GetDistanceUseAvg(distPrev, distCurr)
-
+function GetDistanceUseAvg(distCurr)
 {
     g_queue.Add(distCurr);
     return g_queue.GetAvg();    
 }
 
-
-
 function CheckDistanceUseAvg(distPrev, distAvg)
-
 {
     // distance should become smaller so distPrev > distAvg
     var bDist = (distAvg > g_distMin && distAvg < g_distMax && (distPrev - distAvg > g_delta));
     return bDist;
-
 }
-
 
 function CheckDistanceUseDiff(distPrev, distCurr)
 {
@@ -222,10 +150,7 @@ function CheckDistanceUseDiff(distPrev, distCurr)
     return bDist;
 }
 
-
-
 function CheckDistanceUseNOutOfM(distPrev, distCurr)
-
 {
     g_objNOutOfM.Add(distCurr < distPrev ?  true : false);
     var bDist  = (distCurr > g_distMin && distCurr < g_distMax && g_objNOutOfM.IsOk());
@@ -233,10 +158,7 @@ function CheckDistanceUseNOutOfM(distPrev, distCurr)
     return bDist;
 }
 
-
-
 function CheckVelocityRecvMax(velRecv)
-
 {
     g_queueVelRecv.Add(velRecv);
 
@@ -247,92 +169,54 @@ function CheckVelocityRecvMax(velRecv)
     return bVel;
 }
 
-
-
 function Start()
-
 {
     g_queue        = new UtilAverageQueue(5);
-
     g_queueDiff    = new UtilAverageQueue(5);
-
     g_queueVelRecv = new UtilAverageQueue(5);
-
-    g_objNOutOfM   = new UtilNOutOfM(10, 7);
+    //g_objNOutOfM   = new UtilNOutOfM(10, 7);
 }
-
-
 
 function Stop()
-
 {
-
 }
 
-
-
 function Process()
-
 {
     var t             = GetSampleTime(); 
     var ptActorCog    = GetSubjectCenter(g_actor);
     var ptActorNose   = GetSubjectNose(g_actor);
     var ptReceiverCog = GetSubjectCenter(g_receiver);
 
-    SetOutputMissing(0);
-    SetOutputMissing(1);
-    SetOutputMissing(2);
+    SetOutputMissing();
 
     if (g_tPrev != -1 && g_ptActorCogPrev && g_ptReceiverCogPrev && ptActorCog && ptReceiverCog)
-
     {
         var distCurr    = DistBetweenSubjects(ptActorCog, ptReceiverCog);
-        var distAvg     = GetDistanceUseAvg(g_distPrev, distCurr);
+        var distAvg     = GetDistanceUseAvg(distCurr);
         var velActor    = Vel(g_ptActorCogPrev, ptActorCog, g_tPrev, t);
         var velReceiver = Vel(g_ptReceiverCogPrev, ptReceiverCog, g_tPrev, t);
     
         if (ptActorNose) 
-
         {
             var angle       = Angle(ptActorCog, ptActorNose, ptReceiverCog);
             var angleDeg    = RadToDegree(angle);
 
             var bVelRecv    = CheckVelocityRecvMax(velReceiver);
-
             var bVel        = velActor > velReceiver;
 
-            //var bVel        = true;
-
             var bAngle      = angleDeg < g_angle;
-
             var bDistAvg    = CheckDistanceUseAvg(g_distPrev, distAvg);
-
-            // additional strategies which you can use to assess approach
-
-            // var bDistDiff   = CheckDistanceUseDiff(g_distPrev, distCurr);
-
-            // var bDistN      = CheckDistanceUseNOutOfM(g_distPrev, distCurr);
-
-        
 
             var bApproach0 = bVelRecv && bVel && bAngle;
 
             SetOutput(bApproach0 && bDistAvg); // replace bDistAvg with other strategy
-
         }
 
-
-
         g_distPrev = distAvg;
-
     }
 
-
-
     g_tPrev             = t;
-
     g_ptActorCogPrev    = ptActorCog;
-
     g_ptReceiverCogPrev = ptReceiverCog;
-
 }
