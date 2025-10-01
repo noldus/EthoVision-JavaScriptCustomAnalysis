@@ -18,7 +18,6 @@
 // Edit the values here below when needed (distances in mm)
 // Optional: Create a copy of this variable and specify Subject 2 as g_actor and Subject 1 as g_receiver
 
-
 const g_actor           = "Subject 2";
 const g_receiver        = "Subject 1";
 const g_distMin         = 70;  // 7 cm
@@ -45,7 +44,7 @@ class UtilAverageQueue
         this.m_aValues     = [];
     }
     
-    Add(value)
+    Add(value) 
     {
         while (this.m_aValues.length >= this.m_nSamplesMax)
         {
@@ -92,6 +91,11 @@ class UtilAverageQueue
     }
 }
 
+function Clamp(x, xMin, xMax)
+{
+   return Math.min(Math.max(x, xMin), xMax);
+}
+
 function RadToDegree(x)
 {
     return x * 180 / Math.PI;
@@ -111,6 +115,8 @@ function DistBetweenSubjects(ptActor, ptReceiver)
 
 function Angle(ptActorCog, ptActorNose, ptReceiverCog)
 {
+    // can be NaN
+
     var ax = ptActorNose.x - ptActorCog.x;
     var ay = ptActorNose.y - ptActorCog.y;
 
@@ -122,8 +128,14 @@ function Angle(ptActorCog, ptActorNose, ptReceiverCog)
     var aLength = Math.sqrt(ax * ax + ay * ay);
     var bLength = Math.sqrt(bx * bx + by * by);
 
-    var cosAlpha = prod / (aLength * bLength);
+    var cosAlpha = 0;
 
+    if (aLength != 0 && bLength != 0)
+    {
+       cosAlpha = prod / (aLength * bLength);
+       cosAlpha = Clamp(cosAlpha, -1, 1);  // clamp between [-1, 1]
+    }
+    
     return Math.acos(cosAlpha);
 }
 
